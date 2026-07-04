@@ -1,0 +1,102 @@
+# 运行 Agent Skills
+
+Skills 适合把 Agent 的复杂能力沉淀为可复用任务包。一个 Skill 可以包含说明文档、入口脚本、依赖描述、测试样例和输出格式约束。相比只靠提示词，Skills 更容易版本化、审计和回归测试，也更适合在企业内部复用。
+
+云沙箱适合作为 Skills 的执行环境。业务系统根据任务选择 Skill，把 Skill 包和输入文件写入沙箱，在隔离环境中执行入口脚本，再读取结构化结果。这样可以避免 Skill 依赖污染主服务，也能让每次执行都有明确输入、输出和生命周期。
+
+## 业务场景
+
+- 数据质量检查、数据清洗、报表生成等标准化任务。
+- 代码库分析、测试运行、依赖检查等工程任务。
+- 文档处理、格式转换、摘要生成等办公自动化任务。
+- 企业内部把固定诊断流程封装成 Skill，供多个 Agent 复用。
+
+## Skill 包结构
+
+一个可维护的 Skill 至少应包含：
+
+```text
+data-quality/
+  SKILL.md
+  run.py
+  tests/
+  output_schema.json
+```
+
+`SKILL.md` 说明使用条件、输入和输出；入口脚本负责执行；测试样例和输出 schema 用来保证 Skill 可回归、可校验。生产系统中，Skill 包建议放在代码仓库或制品仓库中，按版本引用。
+
+## 示例代码
+
+以下示例把 `data-quality` Skill 写入云沙箱，检查 CSV 的缺失值和重复订单号，并返回业务建议。
+
+```javascript
+import { Sandbox } from "e2b";
+
+const sandbox = await Sandbox.create("code-interpreter-v1", {
+  apiKey: process.env.E2B_API_KEY,
+  apiUrl: process.env.E2B_API_URL,
+  domain: process.env.E2B_DOMAIN,
+  envs: { TASK_TYPE: "agent-skill" },
+});
+
+try {
+  await sandbox.files.makeDir("/tmp/agent-skills");
+  await sandbox.files.makeDir("/tmp/agent-skills/skills");
+  await sandbox.files.makeDir("/tmp/agent-skills/skills/data-quality");
+
+  await sandbox.files.write(
+    "/tmp/agent-skills/skills/data-quality/run.py",
+    `import csv, json, sys
+from collections import Counter
+
+input_path = sys.argv[1]
+rows = list(csv.DictReader(open(input_path, newline="")))
+missing_cells = sum(1 for row in rows for value in row.values() if value == "")
+order_ids = [row["order_id"] for row in rows]
+duplicates = [order_id for order_id, count in Counter(order_ids).items() if count > 1]
+recommendation = "needs_cleanup_before_analysis" if missing_cells or duplicates else "ready_for_analysis"
+print(json.dumps({
+    "row_count": len(rows),
+    "missing_cells": missing_cells,
+    "duplicate_order_ids": duplicates,
+    "recommendation": recommendation
+}, ensure_ascii=False))
+`,
+  );
+  await sandbox.files.write(
+    "/tmp/agent-skills/input.csv",
+    "order_id,customer,amount,status\n1001,Acme,1200,paid\n1002,Acme,,paid\n1002,Acme,900,paid\n",
+  );
+
+  const result = await sandbox.commands.run("python3 skills/data-quality/run.py input.csv", {
+    cwd: "/tmp/agent-skills",
+    timeoutMs: 30_000,
+  });
+  if (result.exitCode !== 0) {
+    throw new Error(result.stderr || result.stdout);
+  }
+
+  console.log(JSON.parse(result.stdout));
+} finally {
+  await sandbox.kill();
+}
+```
+
+## 上线建议
+
+- Skill 包必须版本化。执行记录中保存 Skill 名称、版本、输入摘要和输出摘要。
+- 每个 Skill 暴露一个稳定入口，例如 `run.py`、`main.ts` 或 `entrypoint.sh`。
+- 输出使用 JSON，并用 schema 校验字段和类型。
+- 常用依赖放入自定义模板，避免每次执行临时安装。
+- 高风险 Skill 需要权限分级和审批，例如访问内部系统、执行写操作或处理敏感数据。
+
+## 可运行示例
+
+本实践对应示例项目中的 `npm run skills`。该脚本会把 Skill 包和输入数据写入云沙箱，执行后返回数据质量结论。
+
+## 相关功能
+
+- [读写文件](../功能说明/Filesystem/读写文件.md)
+- [运行命令](../功能说明/Commands/运行命令.md)
+- [自定义模板](../功能说明/Templates/自定义模板.md)
+- [安全执行 Agent 工具调用](./安全执行%20Agent%20工具调用.md)

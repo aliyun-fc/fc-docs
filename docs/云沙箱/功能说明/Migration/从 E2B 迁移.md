@@ -1,0 +1,26 @@
+# 从 E2B 迁移
+
+云沙箱的核心接入目标是原生兼容 E2B SDK。已有 E2B 应用迁移到云沙箱时，优先保持代码结构不变，只替换连接参数。
+
+## 替换连接参数
+
+```bash
+export E2B_API_KEY="<your-api-key>"
+export E2B_API_URL="https://api.<region>.e2b.fc.aliyuncs.com"
+export E2B_DOMAIN="<region>.e2b.fc.aliyuncs.com"
+```
+
+## 优先验证的能力
+
+迁移时建议先验证以下主链路：
+
+- 创建、连接、暂停、恢复和终止沙箱。
+- 执行命令、后台命令、标准输入和 PTY。
+- 文件读写、目录管理、上传和下载。
+- `getHost(port)` 暴露临时服务。
+- 模板构建和指定模板创建沙箱。
+
+## 需要改造的能力
+
+如果应用依赖 E2B Volume、Snapshot、MCP gateway、BYOC、网络高级配置或 Metrics/Logs，请先改造设计，不要直接迁移。
+

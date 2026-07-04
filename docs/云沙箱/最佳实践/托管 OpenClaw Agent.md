@@ -1,0 +1,193 @@
+# 托管 OpenClaw Agent
+
+OpenClaw 是一个开源的个人 AI Assistant。它的核心形态不是单次工具脚本，而是一个长期运行的 Gateway：连接模型、消息入口、工具、Skills、会话和 Control UI。OpenClaw 官方推荐通过 `openclaw onboard` 完成配置，通过 `openclaw gateway` 管理 Gateway，通过 `openclaw dashboard` 打开控制台，也可以用 `openclaw agent`、`openclaw message` 等 CLI 命令直接和 Agent 交互。
+
+云沙箱（FC Agent Sandbox）适合承载这类完整 Agent 应用：把 OpenClaw 及其依赖预装进自定义模板，按需创建沙箱实例运行 Gateway，通过 `getHost(port)` 暴露 Control UI，通过 `commands.run()` 或 `Sandbox.connect()` 执行 CLI 运维命令。这样开发者可以用接近 E2B 的方式，把 OpenClaw 放到云上隔离环境中做演示、评测、开发环境托管或企业内试运行。
+
+## 适用场景
+
+- 团队希望快速创建一个隔离的 OpenClaw Agent 实例，用于客户演示、POC 或内部试用。
+- 开发者希望通过 WebUI 管理 OpenClaw，同时保留 CLI 运维能力。
+- 企业要评测第三方 Skills、消息通道或工具调用，不希望直接运行在本地电脑或长期业务主机上。
+- Agent 需要处理文件、执行命令、访问浏览器或调用外部工具，要求有独立的沙箱边界和可回收生命周期。
+
+## 推荐架构
+
+建议使用“模板固化 + 沙箱运行 + 外部状态”的架构：
+
+- **自定义模板**：预装 Node.js、OpenClaw CLI、浏览器依赖、常用工具和启动脚本。
+- **云沙箱（FC Agent Sandbox）**：每个沙箱运行一个 OpenClaw Gateway 实例，承载 Control UI、CLI 命令和 Agent 任务。
+- **外部系统**：保存长期配置、审计日志、用户身份、业务数据库和敏感凭证。
+
+不要把长期凭证、生产消息通道 Token、企业私有数据直接固化到模板中。模板只放软件和基础依赖；运行时通过环境变量或业务侧密钥系统注入短期凭证。
+
+## 构建 OpenClaw 模板
+
+先准备一个包含 OpenClaw 的基础镜像，并推送到可被云沙箱构建访问的镜像仓库。以下 Dockerfile 只展示关键步骤，实际镜像应按企业安全要求固定版本、开启镜像扫描，并补充浏览器和字体依赖。
+
+```dockerfile
+FROM node:24-bookworm
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    ca-certificates curl git python3 python3-pip ripgrep \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN npm install -g openclaw@latest
+
+WORKDIR /workspace
+EXPOSE 18789
+```
+
+构建并推送镜像后，通过 E2B SDK 的 `Template.build()` 创建云沙箱模板：
+
+```python
+import os
+import time
+from e2b import Template, default_build_logger
+
+image = os.environ["OPENCLAW_IMAGE"]
+
+build = Template.build(
+    Template().from_image(image),
+    name=f"openclaw-agent-{int(time.time())}",
+    cpu_count=2,
+    memory_mb=4096,
+    api_key=os.environ["E2B_API_KEY"],
+    api_url=os.environ["E2B_API_URL"],
+    domain=os.environ["E2B_DOMAIN"],
+    on_build_logs=default_build_logger(),
+)
+
+print("template_id:", build.template_id)
+```
+
+## 启动 OpenClaw Gateway
+
+创建沙箱时使用上一步生成的模板 ID。首次运行建议先通过 CLI 完成配置，确认模型、Gateway、Control UI 和工具能力正常后，再沉淀为启动脚本。
+
+```typescript
+import { Sandbox } from "e2b";
+
+const template = process.env.OPENCLAW_TEMPLATE_ID;
+if (!template) {
+  throw new Error("OPENCLAW_TEMPLATE_ID is required");
+}
+
+const sandbox = await Sandbox.create(template, {
+  apiKey: process.env.E2B_API_KEY,
+  apiUrl: process.env.E2B_API_URL,
+  domain: process.env.E2B_DOMAIN,
+  envs: {
+    OPENCLAW_HOME: "/workspace/.openclaw",
+    OPENCLAW_STATE_DIR: "/workspace/.openclaw/state",
+    // 按 OpenClaw 的模型配置要求注入模型或订阅凭证。
+    // 不要把真实凭证写入模板或代码仓库。
+  },
+  metadata: {
+    app: "openclaw",
+    purpose: "agent-demo",
+  },
+});
+
+try {
+  await sandbox.commands.run("mkdir -p /workspace/.openclaw/state");
+
+  const gateway = await sandbox.commands.run(
+    "openclaw gateway --port 18789 --verbose",
+    {
+      cwd: "/workspace",
+      background: true,
+      timeoutMs: 30_000,
+    },
+  );
+
+  const health = await sandbox.commands.run("openclaw gateway status", {
+    cwd: "/workspace",
+    timeoutMs: 30_000,
+  });
+  console.log(health.stdout);
+
+  const host = sandbox.getHost(18789);
+  console.log(`OpenClaw Control UI: https://${host}`);
+  console.log(`Gateway process id: ${gateway.pid}`);
+} finally {
+  // 演示环境可以保留沙箱给用户访问；自动化测试结束后应释放沙箱。
+  // await sandbox.kill();
+}
+```
+
+如果 `openclaw gateway status` 返回 Gateway 未完成配置，先进入沙箱执行 `openclaw onboard` 或使用配置脚本写入 Gateway、模型和 Control UI 配置。OpenClaw 的 Onboard 会引导选择模型提供方、配置 API Key、设置 Gateway 和 Skills。生产环境建议把这些配置步骤拆成可审计的初始化脚本，而不是在沙箱启动时人工交互。
+
+## 访问 WebUI
+
+OpenClaw Gateway 默认监听 `18789` 端口。服务启动后，通过 `sandbox.getHost(18789)` 获取公网访问域名：
+
+```typescript
+const url = `https://${sandbox.getHost(18789)}`;
+console.log(url);
+```
+
+访问 Control UI 前需要确认以下事项：
+
+- Gateway 只监听需要暴露的端口，避免额外服务对外开放。
+- Control UI 启用了认证或共享密钥，不要裸露未授权控制台。
+- 沙箱用于演示或评测时，建议设置明确的生命周期和清理策略。
+- 如需长期访问，使用业务网关、身份认证和审计系统承接生产流量，不把 `getHost()` 返回的临时域名当作生产域名。
+
+## 通过 CLI 管理 Agent
+
+WebUI 适合交互管理，CLI 更适合自动化运维。可以通过 `commands.run()` 在沙箱内执行 OpenClaw CLI：
+
+```typescript
+const status = await sandbox.commands.run("openclaw gateway status", {
+  cwd: "/workspace",
+});
+
+const reply = await sandbox.commands.run(
+  `openclaw agent --message "检查当前工作区，并给出可执行的下一步建议" --thinking high`,
+  {
+    cwd: "/workspace",
+    timeoutMs: 120_000,
+  },
+);
+
+console.log(status.stdout);
+console.log(reply.stdout);
+```
+
+如果业务服务需要在不同请求中继续管理同一个 OpenClaw 实例，保存 `sandbox.sandboxId`，后续使用 `Sandbox.connect()` 连接：
+
+```typescript
+const sandboxId = process.env.OPENCLAW_SANDBOX_ID;
+if (!sandboxId) {
+  throw new Error("OPENCLAW_SANDBOX_ID is required");
+}
+
+const sandbox = await Sandbox.connect(sandboxId, {
+  apiKey: process.env.E2B_API_KEY,
+  apiUrl: process.env.E2B_API_URL,
+  domain: process.env.E2B_DOMAIN,
+});
+
+const result = await sandbox.commands.run("openclaw gateway status", {
+  cwd: "/workspace",
+});
+console.log(result.stdout);
+```
+
+## 最佳实践
+
+- **先验证 CLI，再开放 WebUI**：先跑通 `openclaw gateway status`、`openclaw agent --message`，再通过 `getHost()` 暴露 Control UI。
+- **模板只固化软件**：Node.js、OpenClaw、浏览器依赖和常用工具放入模板；模型 Key、消息平台 Token 和企业凭证运行时注入。
+- **把沙箱当作可丢弃运行环境**：长期记忆、审计日志和业务状态放到外部存储，不依赖沙箱本地文件系统长期保存。
+- **限制消息入口和公网暴露**：OpenClaw 可以连接 Telegram、Slack、Discord、WhatsApp 等通道。试运行阶段建议只开放低风险通道，并对 DM、群聊和未知发送者做访问控制。
+- **隔离第三方 Skills**：从社区安装的 Skills 应视为不可信代码。先在临时沙箱验证行为、权限和日志，再进入生产流程。
+
+## 相关功能
+
+- [构建模板](../功能说明/Templates/构建模板.md)
+- [Sandbox 公网 URL](../功能说明/Network/Sandbox%20公网%20URL.md)
+- [后台命令](../功能说明/Commands/后台命令.md)
+- [连接沙箱](../功能说明/Sandbox/连接沙箱.md)
+- [不可信代码](../安全合规/不可信代码.md)

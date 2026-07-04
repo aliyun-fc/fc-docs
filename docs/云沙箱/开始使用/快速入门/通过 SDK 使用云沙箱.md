@@ -1,0 +1,127 @@
+# 通过 SDK 使用云沙箱
+
+本文引导你通过 E2B SDK 创建第一个云沙箱 Sandbox，并在其中执行一条命令。
+
+## 前置条件
+
+- 已拥有阿里云账号，并具备函数计算相关操作权限。
+- 已在函数计算控制台创建云沙箱 API Key。
+- 已确认目标地域支持云沙箱，并且本机网络可访问该地域的云沙箱服务。
+- 使用 Python 示例时，已安装 Python 3.10 或更高版本。
+- 使用 TypeScript 示例时，已安装 Node.js 18 或更高版本。
+
+SDK 版本要求、支持地域和 Endpoint 规则参见[使用约束](../使用约束.md)。
+
+## 1. 配置环境变量
+
+通过环境变量传入 API Key 和 Endpoint，不要写死在代码里。
+
+```bash
+export E2B_API_KEY="<your-api-key>"
+export E2B_API_URL="https://api.<region>.e2b.fc.aliyuncs.com"
+export E2B_DOMAIN="<region>.e2b.fc.aliyuncs.com"
+```
+
+其中 `<region>` 为云沙箱服务所在地域。
+
+## 2. 安装 E2B SDK
+
+Python：
+
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install e2b e2b-code-interpreter
+```
+
+TypeScript：
+
+```bash
+npm init -y
+npm install e2b @e2b/code-interpreter dotenv
+npm install -D tsx typescript @types/node
+```
+
+## 3. 创建并运行 Sandbox
+
+选择 Python 或 TypeScript 示例运行即可。
+
+### Python
+
+创建 `quickstart.py`：
+
+```python
+import os
+from e2b_code_interpreter import Sandbox
+
+
+def require_env(name: str) -> str:
+    value = os.environ.get(name, "").strip()
+    if not value:
+        raise RuntimeError(f"缺少环境变量: {name}")
+    return value
+
+
+sandbox = None
+
+try:
+    sandbox = Sandbox.create(
+        template="code-interpreter-v1",
+        api_key=require_env("E2B_API_KEY"),
+        api_url=require_env("E2B_API_URL"),
+        domain=require_env("E2B_DOMAIN"),
+    )
+
+    result = sandbox.commands.run("python3 -c \"print('hello from sandbox')\"")
+    print(result.stdout.strip())
+finally:
+    if sandbox is not None:
+        sandbox.kill()
+```
+
+运行：
+
+```bash
+python quickstart.py
+```
+
+## TypeScript
+
+创建 `quickstart.ts`：
+
+```typescript
+import "dotenv/config";
+import { Sandbox } from "@e2b/code-interpreter";
+
+async function main() {
+  const sandbox = await Sandbox.create("code-interpreter-v1", {
+    apiKey: process.env.E2B_API_KEY,
+    apiUrl: process.env.E2B_API_URL,
+    domain: process.env.E2B_DOMAIN,
+    timeoutMs: 300_000,
+  });
+
+  try {
+    const result = await sandbox.commands.run("python3 -c \"print('hello from sandbox')\"");
+    console.log(result.stdout.trim());
+  } finally {
+    await sandbox.kill();
+  }
+}
+
+main();
+```
+
+运行：
+
+```bash
+npx tsx quickstart.ts
+```
+
+如果能看到 `hello from sandbox`，说明 SDK、API Key、Endpoint、域名和内置模板都已可用。
+
+## 下一步
+
+- 使用 CLI 查看和管理 Sandbox，参见[通过 CLI 使用云沙箱](./通过%20CLI%20使用云沙箱.md)。
+- 了解[生命周期](../../功能说明/Sandbox/生命周期.md)、[运行命令](../../功能说明/Commands/运行命令.md)和[读写文件](../../功能说明/Filesystem/读写文件.md)。
