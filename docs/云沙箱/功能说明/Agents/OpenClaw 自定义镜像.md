@@ -1,0 +1,432 @@
+# OpenClaw 自定义镜像
+
+[OpenClaw](https://github.com/openclaw/openclaw) 是开源 Agent 框架，支持 CLI 编程调用与 Gateway Web UI。我们已在各地域 ACR 预置 OpenClaw 镜像，您无需自行推送镜像或配置 ACREE，选取下方 VPC 镜像地址，通过 `from_image` + `Template.build` 构建模板后即可使用。
+
+首次使用请先完成 [通过 SDK 创建第一个云沙箱](https://help.aliyun.com/zh/functioncompute/create-your-first-cloud-sandbox-via-the-sdk) 中的 SLR 授权、API Key 与 SDK 配置。
+
+---
+
+## 前置条件
+
+- 已完成 [SDK 接入](https://help.aliyun.com/zh/functioncompute/create-your-first-cloud-sandbox-via-the-sdk)（E2B API Key、`api_url`、`domain`）
+- 已安装依赖：`pip install e2b e2b-code-interpreter`
+- 已准备模型 API Key，创建沙箱时通过 `envs` 注入 — 镜像内不预置
+  - 国内（推荐）：[百炼控制台](https://bailian.console.aliyun.com/) 获取 API Key（`sk-` 开头）
+  - 海外：[OpenAI Platform](https://platform.openai.com/) 获取 `OPENAI_API_KEY`
+
+---
+
+## 镜像地址
+
+按地域选取 `FROM_IMAGE`，须使用 **VPC 内网地址**（域名含 `-vpc`）：
+
+| Region | 镜像（VPC） |
+|--------|-------------|
+| cn-beijing | `fc-e2b-registry-vpc.cn-beijing.cr.aliyuncs.com/runtime/openclaw:v0.0.32` |
+| cn-shenzhen | `fc-e2b-registry-vpc.cn-shenzhen.cr.aliyuncs.com/runtime/openclaw:v0.0.32` |
+| ap-southeast-1 | `fc-e2b-registry-vpc.ap-southeast-1.cr.aliyuncs.com/runtime/openclaw:v0.0.32` |
+| cn-hongkong | `fc-e2b-registry-vpc.cn-hongkong.cr.aliyuncs.com/runtime/openclaw:v0.0.32` |
+| cn-shanghai | `fc-e2b-registry-vpc.cn-shanghai.cr.aliyuncs.com/runtime/openclaw:v0.0.32` |
+| cn-hangzhou | `fc-e2b-registry-vpc.cn-hangzhou.cr.aliyuncs.com/runtime/openclaw:v0.0.32` |
+
+推荐构建规格：`cpu_count=2`，`memory_mb=4096`。
+
+---
+
+## 构建 Template
+
+自定义模板需先将镜像构建为 Template，**只需执行一次**。完成后保存 `template_id`，后续创建 Sandbox 时直接复用。
+
+以下以北京地域为例：
+
+```python
+import time
+
+from e2b import Template, default_build_logger
+
+FROM_IMAGE = "fc-e2b-registry-vpc.cn-beijing.cr.aliyuncs.com/runtime/openclaw:v0.0.25"
+
+OPTS = {
+    "api_key": "<你的 E2B API Key>",
+    "api_url": "https://api.cn-beijing.e2b.fc.aliyuncs.com",
+    "domain": "cn-beijing.e2b.fc.aliyuncs.com",
+}
+
+build = Template.build(
+    Template().from_image(FROM_IMAGE),
+    alias=f"openclaw-{int(time.time())}",
+    cpu_count=2,
+    memory_mb=4096,
+    on_build_logs=default_build_logger(),
+    **OPTS,
+)
+
+print(f"template_id: {build.template_id}")   # 保存，后续可复用
+```
+
+构建完成后控制台模板状态应为 `ready`。同一 `template_id` 可多次创建 Sandbox，无需每次重新构建。
+
+### Template alias 命名限制
+
+`alias` 不得使用系统保留前缀 **`openclaw-v`**（例如 `openclaw-v0.0.32`、`openclaw-v032-test`），否则会报错：
+
+```text
+400: invalid template name '...': must not be a system reserved name openclaw-v*
+```
+
+推荐使用 `my-openclaw-{timestamp}` 等自定义名称。以 `openclaw-` 开头但**不含** `openclaw-v` 的名称（如 `openclaw-1783153993`）通常可用。
+
+---
+
+## 部署 Gateway
+
+启动 OpenClaw Gateway，在浏览器中与 Agent 对话。以下完整流程：**创建 Sandbox → 配置 → 启动 Gateway → 获取访问地址**。
+
+以下默认使用**百炼**（国内推荐）；海外用户可将注释中的 OpenAI 方案取消注释并注释掉百炼部分。服务端编程调用见 [Agent CLI](#agent-cli)。
+
+```python
+import time
+
+from e2b_code_interpreter import Sandbox
+
+# Gateway 鉴权 Token：自行设定任意字符串，无需从 API 获取。
+# 启动时传给 openclaw gateway --token；浏览器访问时通过 URL ?token= 携带。
+# 官方文档亦支持 OPENCLAW_APP_TOKEN 环境变量，本质相同。
+TOKEN = "my-gateway-token"
+PORT = 18789
+
+# 百炼（国内推荐）
+BAILIAN_API_KEY = "<your-bailian-api-key>"
+BAILIAN_BASE_URL = "https://dashscope.aliyuncs.com/apps/anthropic"
+BAILIAN_MODEL = "qwen3.7-max"
+
+# 1. 创建 Sandbox
+sandbox = Sandbox.create(
+    template=build.template_id,
+    timeout=3600,
+    envs={
+        "ANTHROPIC_AUTH_TOKEN": BAILIAN_API_KEY,
+        "ANTHROPIC_BASE_URL": BAILIAN_BASE_URL,
+        "ANTHROPIC_MODEL": BAILIAN_MODEL,
+    },
+    # 海外 OpenAI：注释上方 envs，改用下方
+    # envs={"OPENAI_API_KEY": "<your-openai-api-key>"},
+    **OPTS,
+)
+
+# 百炼：注册 provider（OpenAI 可跳过此步）
+sandbox.commands.run(
+    "openclaw onboard --non-interactive --accept-risk --skip-health "
+    "--auth-choice custom-api-key "
+    f"--custom-api-key {BAILIAN_API_KEY} "
+    f"--custom-base-url {BAILIAN_BASE_URL} "
+    "--custom-compatibility anthropic "
+    f"--custom-model-id {BAILIAN_MODEL} "
+    "--custom-provider-id bailian",
+    timeout=120,
+)
+
+# 2. 设置默认模型
+sandbox.commands.run(
+    f"openclaw config set agents.defaults.model.primary bailian/{BAILIAN_MODEL}"
+)
+# 海外 OpenAI：
+# sandbox.commands.run(
+#     "openclaw config set agents.defaults.model.primary openai/gpt-4o"
+# )
+
+# 3. 配置 Control UI（FC E2B 公网访问必需）
+origin = f"https://{sandbox.get_host(PORT)}"
+sandbox.commands.run(
+    f"openclaw config set gateway.controlUi.allowedOrigins '[\"{origin}\"]'"
+)
+
+# 4. 启动 Gateway（后台运行）
+sandbox.commands.run(
+    f"bash -lc 'openclaw config set gateway.controlUi.allowInsecureAuth true && "
+    f"openclaw config set gateway.controlUi.dangerouslyDisableDeviceAuth true && "
+    f"openclaw gateway --allow-unconfigured --bind lan --auth token "
+    f"--token {TOKEN} --port {PORT}'",
+    background=True,
+)
+
+# 5. 等待 Gateway 就绪
+for _ in range(45):
+    probe = sandbox.commands.run(
+        f'bash -lc \'ss -ltn | grep -q ":{PORT} " && echo ready || echo waiting\''
+    )
+    if probe.stdout.strip() == "ready":
+        break
+    time.sleep(1)
+
+url = f"https://{sandbox.get_host(PORT)}/?token={TOKEN}"
+print(f"Gateway: {url}")
+# X-Access-Token 在 Sandbox.create 成功后由 SDK 返回，用于 FC E2B 公网端口代理鉴权
+print(f"Access Token: {sandbox._envd_access_token}")
+```
+
+`X-Access-Token` **不是手动申请的**，也**不是 Gateway Token**。`Sandbox.create(...)` 成功后，SDK 在 sandbox 对象上暴露 `_envd_access_token`（即 Sandbox Access Token）。每个 Sandbox 各有一份，仅在该 Sandbox 存活期间有效；销毁后失效，需重新创建 Sandbox 获取新值。
+
+### 浏览器访问（FC E2B）
+
+FC E2B 要在浏览器中打开 Gateway Control UI，**须先绑定自定义域名**。默认平台域名（`*.e2b.fc.aliyuncs.com`）会**触发下载而非打开页面**；绑定自定义域名后可正常访问。
+
+#### 配置自定义域名
+
+**第一步：控制台配置。** 在函数计算控制台为云沙箱绑定自定义域名，配置证书与 DNS（`api.<你的自定义域名>` / `*.<你的自定义域名>`）。
+
+**第二步：SDK 改 `OPTS`。** 将上文 [构建 Template](#构建-template) 中的默认 `OPTS`：
+
+```python
+OPTS = {
+    "api_key": "<你的 E2B API Key>",
+    "api_url": "https://api.cn-beijing.e2b.fc.aliyuncs.com",
+    "domain": "cn-beijing.e2b.fc.aliyuncs.com",
+}
+```
+
+替换为与控制台一致的自定义域名（`api_key` 须为**绑定该自定义域名同一账号**下的 Key）：
+
+```python
+OPTS = {
+    "api_key": "<你的 E2B API Key>",
+    "api_url": "https://api.<你的自定义域名>",
+    "domain": "<你的自定义域名>",
+}
+```
+
+**第三步：全流程传入 `OPTS`。** `Template.build(..., **OPTS)`、`Sandbox.create(..., **OPTS)` 及文档中其他 SDK 调用均使用上述 `OPTS`，无需额外参数。
+
+完成后 `sandbox.get_host(PORT)` 将返回 `{PORT}-sbx-{sandbox_id}.<你的自定义域名>`；Gateway 的 `allowedOrigins`、浏览器地址栏与下文 `curl` 中的 `<host>` 均使用该地址。
+
+#### 打开 Control UI
+
+完成自定义域名配置并 [部署 Gateway](#部署-gateway) 后，公网访问还需两层鉴权：
+
+| 鉴权 | 来源 | 作用 | 传递方式 |
+|------|------|------|----------|
+| Sandbox Access Token | `Sandbox.create` 返回的 `sandbox._envd_access_token` | FC E2B 端口代理 | 请求头 `X-Access-Token` |
+| Gateway Token | 代码中自行设定的 `TOKEN` | OpenClaw Control UI | URL 参数 `?token=` |
+
+1. 运行上文脚本，记录输出的 `Gateway` URL 与 `Access Token`
+2. 用浏览器插件（如 [ModHeader](https://modheader.com/)）添加请求头：`X-Access-Token: <Access Token>`
+3. 打开 Gateway URL（URL 中已含 `?token=`）
+
+可用 `curl` 先验证（须带 `X-Access-Token`，否则 FC E2B 返回 403）：
+
+```bash
+curl -sI \
+  -H "X-Access-Token: <Access Token>" \
+  "https://<host>/?token=<Gateway Token>"
+```
+
+期望响应含 `200`；返回 HTML 页面即表示 Gateway 正常。
+
+若出现「浏览器来源不被允许」，确认 `allowedOrigins` 与地址栏来源完全一致（`https://{sandbox.get_host(PORT)}`，无尾部 `/`），修改后 [重启 Gateway](#重启-gateway)。
+
+### 工作原理
+
+| 步骤 | 说明 |
+|------|------|
+| `--bind lan` | Gateway 监听 `0.0.0.0`，E2B 才能代理端口 |
+| `--auth token` | 通过 URL 参数 `?token=` 鉴权 |
+| 浏览器打开 URL | Gateway 提供 UI，浏览器建立 WebSocket |
+| `code=1008 pairing required` | 安全模式下需先批准设备 |
+| `devices approve` | 批准浏览器设备指纹 |
+| 浏览器重连 | WebSocket 连接成功，UI 可用 |
+
+### Gateway 参数
+
+| 参数 | 说明 |
+|------|------|
+| `--allow-unconfigured` | 无需完整配置文件即可启动 |
+| `--bind lan` | 绑定 `0.0.0.0`（E2B 端口代理必需） |
+| `--auth token` | 启用 Token 鉴权 |
+| `--token` | 鉴权 Token（通过 URL `?token=` 传递） |
+| `--port` | 监听端口（默认 `18789`） |
+
+### 安全模式
+
+测试阶段可关闭设备配对（上文已设置 `dangerouslyDisableDeviceAuth true`）。若启用安全模式，打开 URL 后需批准待配对设备：
+
+```python
+import json
+
+for _ in range(30):
+    try:
+        res = sandbox.commands.run(
+            f"openclaw devices list --json --url ws://127.0.0.1:{PORT} --token {TOKEN}"
+        )
+        data = json.loads(res.stdout)
+        if data.get("pending"):
+            rid = data["pending"][0]["requestId"]
+            sandbox.commands.run(
+                f"openclaw devices approve {rid} --token {TOKEN} "
+                f"--url ws://127.0.0.1:{PORT}"
+            )
+            print(f"Device approved: {rid}")
+            break
+    except Exception:
+        pass
+    time.sleep(2)
+```
+
+### 重启 Gateway
+
+修改模型或配置后，在**当前 Sandbox** 中执行：
+
+```python
+origin = f"https://{sandbox.get_host(PORT)}"
+sandbox.commands.run(
+    f"openclaw config set gateway.controlUi.allowedOrigins '[\"{origin}\"]'"
+)
+
+sandbox.commands.run(
+    """bash -lc 'for p in "[o]penclaw gateway" "[o]penclaw-gateway"; do
+for pid in $(pgrep -f "$p" || true); do kill "$pid" 2>/dev/null || true; done
+done'"""
+)
+time.sleep(1)
+
+sandbox.commands.run(
+    f"openclaw gateway --allow-unconfigured --bind lan --auth token "
+    f"--token {TOKEN} --port {PORT}",
+    background=True,
+)
+
+for _ in range(45):
+    probe = sandbox.commands.run(
+        f'bash -lc \'ss -ltn | grep -q ":{PORT} " && echo ready || echo waiting\''
+    )
+    if probe.stdout.strip() == "ready":
+        break
+    time.sleep(1)
+```
+
+### 关闭不安全配置（测试后推荐）
+
+```python
+sandbox.commands.run(
+    "bash -lc 'openclaw config set gateway.controlUi.allowInsecureAuth false && "
+    "openclaw config set gateway.controlUi.dangerouslyDisableDeviceAuth false'"
+)
+
+sandbox.commands.run(
+    """bash -lc 'for p in "[o]penclaw gateway" "[o]penclaw-gateway"; do
+for pid in $(pgrep -f "$p" || true); do kill "$pid" 2>/dev/null || true; done
+done'"""
+)
+
+sandbox.commands.run(
+    f"openclaw gateway --allow-unconfigured --bind lan --auth token "
+    f"--token {TOKEN} --port {PORT}",
+    background=True,
+)
+```
+
+---
+
+## Agent CLI
+
+在服务端以编程方式调用 Agent，无需启动 Gateway。
+
+若已按上文 [部署 Gateway](#部署-gateway) 创建了 Sandbox，直接在同一个 `sandbox` 上执行下方命令即可，**无需再次创建**。
+
+若仅需 CLI、不启动 Gateway：
+
+```python
+from e2b_code_interpreter import Sandbox
+
+# 百炼（国内推荐）
+BAILIAN_API_KEY = "<your-bailian-api-key>"
+BAILIAN_BASE_URL = "https://dashscope.aliyuncs.com/apps/anthropic"
+BAILIAN_MODEL = "qwen3.7-max"
+
+sandbox = Sandbox.create(
+    template=build.template_id,
+    timeout=3600,
+    envs={
+        "ANTHROPIC_AUTH_TOKEN": BAILIAN_API_KEY,
+        "ANTHROPIC_BASE_URL": BAILIAN_BASE_URL,
+        "ANTHROPIC_MODEL": BAILIAN_MODEL,
+    },
+    # 海外 OpenAI：注释上方 envs，改用下方
+    # envs={"OPENAI_API_KEY": "<your-openai-api-key>"},
+    **OPTS,
+)
+
+# 百炼：注册 provider（OpenAI 可跳过此步）
+sandbox.commands.run(
+    "openclaw onboard --non-interactive --accept-risk --skip-health "
+    "--auth-choice custom-api-key "
+    f"--custom-api-key {BAILIAN_API_KEY} "
+    f"--custom-base-url {BAILIAN_BASE_URL} "
+    "--custom-compatibility anthropic "
+    f"--custom-model-id {BAILIAN_MODEL} "
+    "--custom-provider-id bailian",
+    timeout=120,
+)
+
+# 百炼
+result = sandbox.commands.run(
+    f'openclaw agent --local --agent main --model bailian/{BAILIAN_MODEL} '
+    '-m "What is 2+2? Reply with just the number."',
+    timeout=120,
+)
+# 海外 OpenAI：
+# result = sandbox.commands.run(
+#     'openclaw agent --local --message "What is 2+2? Reply with just the number."',
+#     timeout=120,
+# )
+print(result.stdout)
+```
+
+---
+
+## 清理
+
+任务完成后释放资源：
+
+```python
+sandbox.kill()
+```
+
+---
+
+## 环境概览
+
+| 项目 | 规格 |
+|------|------|
+| 操作系统 | Debian |
+| OpenClaw 路径 | `/home/user/.openclaw/bin/openclaw` |
+| 自带 Node | v22.x（`/home/user/.openclaw/tools/node/bin/node`） |
+| 默认用户 / 工作目录 | `user` / `/home/user` |
+
+---
+
+## 计费说明
+
+Sandbox 按 CPU、内存规格与运行时长计费；模型 API 调用费用由百炼、OpenAI 等模型服务单独结算。详见 [计费概述](../../产品计费/计费概述.md)。
+
+---
+
+## 常见问题
+
+| 现象 | 处理 |
+|------|------|
+| Agent 无响应 | 确认 `envs` 已注入模型 Key；百炼场景确认已 `onboard` |
+| Gateway 浏览器打不开 | 添加 `X-Access-Token` 请求头；URL 含 `?token=` |
+| 浏览器触发下载 | 须绑定自定义域名，见 [浏览器访问（FC E2B）](#浏览器访问fc-e2b) |
+| `sandbox account mismatch` | API Key 与自定义域名须为同一账号 |
+| 来源不被允许 | `allowedOrigins` 与地址栏 URL 完全一致，重启 Gateway |
+| 构建失败 | 确认 `FROM_IMAGE` 与地域匹配；`alias` 勿用 `openclaw-v*` 前缀 |
+| 其他 SDK / 构建问题 | 见[自定义模板 — 问题排查](https://help.aliyun.com/zh/functioncompute/custom-template#d21d3cbd8b8xo) |
+
+---
+
+## 参考
+
+- [托管 OpenClaw Agent](../../最佳实践/托管 OpenClaw Agent.md)
+- [E2B OpenClaw Gateway](https://e2b.dev/docs/agents/openclaw/openclaw-gateway)
+- [OpenClaw Control UI](https://docs.openclaw.ai/web/control-ui)
+- [OpenClaw 项目](https://github.com/openclaw/openclaw)
