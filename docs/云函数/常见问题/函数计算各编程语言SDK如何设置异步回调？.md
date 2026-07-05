@@ -1,5 +1,0 @@
-# 函数计算各编程语言SDK如何设置异步回调？
-
-本文介绍函数计算各语言SDK设置异步回调的方法。
-
-您可以在阿里云门户网站[OpenAPI Explorer](https://next.api.aliyun.com/api/)，设置请求Header`X-Fc-Invocation-Type`的值为`Async`，获取各语言的SDK示例，然后再发起调用。如下图所示。![async-sdkdemo](../../../assets/2513797-001-3576091690.png)
