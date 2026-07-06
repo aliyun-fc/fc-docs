@@ -30,5 +30,3 @@ temp/
 # Keep the directories via .gitkeep, but do not track generated content.
 docs/**/开发参考/*
 !docs/**/开发参考/.gitkeep
-contexts
-htnn-gateway
