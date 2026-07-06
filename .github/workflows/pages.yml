@@ -27,6 +27,7 @@ jobs:
         with:
           python-version: "3.x"
           cache: pip
+          cache-dependency-path: requirements-pages.txt
 
       - name: Install dependencies
         run: python -m pip install -r requirements-pages.txt
