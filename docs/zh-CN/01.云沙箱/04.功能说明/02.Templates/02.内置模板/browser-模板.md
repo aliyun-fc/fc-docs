@@ -30,10 +30,10 @@ browser 模板的默认配置如下：
 
 | **配置项** | **默认值** | **说明** |
 | --- | --- | --- |
-| 容器镜像 | `fc-e2b-registry.us-west-1.cr.aliyuncs.com/runtime/browser:v0.0.32` | 预置 browser 镜像 |
+| 容器镜像 | `fc-e2b-registry.cn-beijing.cr.aliyuncs.com/runtime/browser:v0.0.36` | 预置 browser 镜像 |
 | 默认端口 | 3000 | 沙箱服务监听端口 |
-| CPU | 2 vCPU | 最低要求 |
-| 内存 | 2048 MB | 最低要求 |
+| CPU | 4 vCPU | 最低要求 |
+| 内存 | 8192 MB | 最低要求 |
 | 磁盘大小 | 10240 MB | 建议 10 GB 以获得充足的临时存储空间，函数计算将默认提供 |
 
 ## 快速入门
@@ -46,142 +46,372 @@ browser 模板的默认配置如下：
 
 您也可以通过 OpenAPI 或 SDK 进行创建。
 
+browser 模板的完整用法分为两个阶段：先**构建模板**（从 browser 镜像固化出一个带名称的模板），再**运行模板**（创建沙箱、等待健康检查、通过 CDP 自动化并截图、校验 VNC）。下面分别给出 Python 与 Node.js 两种实现。
+
+> **说明**：示例中的 `API_KEY` 需替换为您在控制台生成的 API Key，`API_URL` / `DOMAIN` 需替换为对应地域的接入地址。连接 CDP/VNC 端点时需在请求头中携带 `X-Access-Token` 进行身份验证：Python SDK 可通过内部属性 `sbx._envd_access_token` 获取（后续版本可能重命名或移除），JS SDK 可使用公开字段 `sbx.envdAccessToken`。
+
 ### 第二步：准备本地环境
 
-如果您使用 Python SDK 和 Playwright 验证 CDP 连接，可以按以下方式准备本地环境：
+**Python**：
 
 ```bash
 uv venv .venv --python 3.12
 source .venv/bin/activate
-uv pip install 'e2b<2.25.0' 'playwright>=1.49.0' 'python-dotenv>=1.0.0'
+uv pip install e2b e2b-code-interpreter 'playwright>=1.49.0'
+playwright install chromium
 ```
 
-创建 `.env` 文件并配置以下变量：
+**Node.js**：使用如下 `package.json`，然后执行 `npm install`。
 
-```bash
-E2B_API_KEY=e2b_xxx
-E2B_API_URL=https://api.<region>.e2b.fc.aliyuncs.com
-E2B_DOMAIN=<region>.e2b.fc.aliyuncs.com
+```json
+{
+  "name": "browser-template-demo",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@e2b/code-interpreter": "^2.6.1",
+    "e2b": "^2.31.0",
+    "playwright-core": "^1.49.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.0",
+    "tsx": "^4.23.0",
+    "typescript": "^6.0.3"
+  }
+}
 ```
 
-> **说明**：如果同名环境变量已经存在，建议以 `.env` 中的区域配置为准，避免 SDK 连接到错误区域。
+### 第三步：构建 browser 模板
 
-### 第三步：创建沙箱并获取连接端点
+从 browser 镜像构建一个带名称的模板，构建时指定 CPU 与内存规格（推荐 4 vCPU / 8192 MB）。
 
-创建沙箱实例后，通过 SDK 的 `get_host(port)` 方法获取 WebSocket 连接端点。
-
-如果已经通过控制台或 OpenAPI 创建好 browser 模板，可以直接把示例中的 `template` 替换为已有模板名称。如果需要通过 SDK 临时构建模板，可以使用 `Template().from_image()` 从 browser 镜像构建：
+**Python**：
 
 ```python
-import os
+"""browser 模板构建示例。"""
+
+from e2b import Template, default_build_logger
+
+API_KEY = "e2b_xxx"  # 替换为您的 API Key
+API_URL = "https://api.cn-beijing.e2b.fc.aliyuncs.com"
+DOMAIN = "cn-beijing.e2b.fc.aliyuncs.com"
+FROM_IMAGE = "fc-e2b-registry.cn-beijing.cr.aliyuncs.com/runtime/browser:v0.0.36"
+OPTS = {"api_key": API_KEY, "api_url": API_URL, "domain": DOMAIN}
+
+TEMPLATE_NAME = "my-browser-template"
+
+build = Template.build(
+    Template().from_image(FROM_IMAGE),
+    name=TEMPLATE_NAME,
+    cpu_count=4,
+    memory_mb=8192,
+    skip_cache=False,
+    on_build_logs=default_build_logger(),
+    **OPTS,
+)
+
+print(f"template_id: {build.template_id}")
+print(f"build_id: {build.build_id}")
+```
+
+**Node.js**：
+
+```javascript
+// browser 模板构建示例。
+import { Template, defaultBuildLogger } from 'e2b';
+
+const API_KEY = 'e2b_xxx'; // 替换为您的 API Key
+const API_URL = 'https://api.cn-beijing.e2b.fc.aliyuncs.com';
+const DOMAIN = 'cn-beijing.e2b.fc.aliyuncs.com';
+const FROM_IMAGE =
+  'fc-e2b-registry.cn-beijing.cr.aliyuncs.com/runtime/browser:v0.0.36';
+const OPTS = { apiKey: API_KEY, apiUrl: API_URL, domain: DOMAIN };
+
+const TPL_NAME = 'my-browser-template';
+
+async function main() {
+  const build = await Template.build(Template().fromImage(FROM_IMAGE), TPL_NAME, {
+    ...OPTS,
+    cpuCount: 4,
+    memoryMB: 8192,
+    skipCache: false,
+    onBuildLogs: defaultBuildLogger(),
+  });
+
+  console.log(`template_id: ${build.templateId}`);
+  console.log(`build_id: ${build.buildId}`);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
+```
+
+### 第四步：运行模板并执行自动化脚本
+
+创建沙箱后，先轮询 `/health` 等待 browser 服务就绪，再通过 CDP 端点连接 Playwright 打开目标页并截图，最后校验 VNC（livestream）端点握手。
+
+**Python**：
+
+```python
+"""browser 模板运行示例：创建沙箱 -> 等待健康检查 -> CDP 自动化 -> 截图 -> VNC 校验。"""
+
 import time
-from pathlib import Path
 
-from dotenv import load_dotenv
-from e2b import Sandbox, Template
+from e2b_code_interpreter import Sandbox
 
-load_dotenv(Path(__file__).resolve().parent / ".env", override=True)
+API_KEY = "e2b_xxx"  # 替换为您的 API Key
+API_URL = "https://api.cn-beijing.e2b.fc.aliyuncs.com"
+DOMAIN = "cn-beijing.e2b.fc.aliyuncs.com"
+OPTS = {"api_key": API_KEY, "api_url": API_URL, "domain": DOMAIN}
 
-IMAGE = "fc-e2b-registry.us-west-1.cr.aliyuncs.com/runtime/browser:v0.0.32"
-TEMPLATE_NAME = f"browser-sandbox-{int(time.time())}"
-BROWSER_SANDBOX_PORT = 3000
+TEMPLATE_NAME = "my-browser-template"
+
+BROWSERTOOL_PORT = 3000
+TARGET_URL = "https://example.com"
+SCREENSHOT_PATH = "browser-example.png"
 
 
-registry_template = Template().from_image(image=IMAGE)
-build_info = Template.build(
-    registry_template,
-    TEMPLATE_NAME,
-    api_key=os.environ["E2B_API_KEY"],
-    cpu_count=2,
-    memory_mb=2048,
-)
+def wait_until_healthy(sbx: Sandbox, host: str, token: str, timeout: int = 60) -> None:
+    """轮询公网网关 /health 端点，直到 browser 服务就绪或超时。"""
+    # 走公网网关 host（3000-<sandboxId>.<domain>），需带 X-Access-Token 头。
+    token_header = f"-H 'X-Access-Token: {token}' " if token else ""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        result = sbx.commands.run(
+            f"curl -sS -o /dev/null -w '%{{http_code}}' -m 4 "
+            f"{token_header}"
+            f"https://{host}/health",
+            timeout=10,
+        )
+        code = "".join(result.stdout or []).strip()
+        if code == "200":
+            print(f"  ✓ /health 就绪 (HTTP {code})")
+            return
+        print(f"  ...等待 browser 服务就绪 (HTTP {code!r})")
+        time.sleep(2)
+    raise TimeoutError(f"browser 服务在 {timeout}s 内未就绪")
 
-sbx = Sandbox.create(
-    template=build_info.name,
-    api_key=os.environ["E2B_API_KEY"],
-    timeout=600,
-    allow_internet_access=True,
-)
 
-host = sbx.get_host(BROWSER_SANDBOX_PORT)
+def verify_vnc_handshake(sbx: Sandbox, host: str, token: str) -> None:
+    """探测公网网关 /ws/livestream 的 WebSocket 握手，返回 101 即视为 VNC 就绪。"""
+    # 升级成功后连接会保持为 WebSocket，curl 会一直读到 -m 超时（退出码 28），
+    # 这属于预期行为，用 `|| true` 吞掉退出码，只解析已收到的响应头。
+    # 走公网网关 host（3000-<sandboxId>.<domain>），需带 X-Access-Token 头。
+    token_header = f"-H 'X-Access-Token: {token}' " if token else ""
+    cmd = (
+        "curl -sS -i -m 4 "
+        "-H 'Connection: Upgrade' "
+        "-H 'Upgrade: websocket' "
+        "-H 'Sec-WebSocket-Version: 13' "
+        "-H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' "
+        "{token_header}"
+        "https://{host}/ws/livestream || true"
+    ).format(token_header=token_header, host=host)
+    result = sbx.commands.run(cmd, timeout=15)
+    out = "".join(result.stdout or [])
+    status_line = out.splitlines()[0].strip() if out.strip() else "<无响应>"
+    print(f"  /ws/livestream 响应: {status_line!r}")
+    assert "101" in out and "Switching Protocols" in out, (
+        f"VNC 端点未能升级为 WebSocket: {out[:200]!r}"
+    )
+    print("  ✓ VNC (livestream) 端点握手通过")
 
-# CDP 自动化端点
-cdp_ws_url = f"wss://{host}/ws/automation"
 
-# VNC 实时流端点
-vnc_ws_url = f"wss://{host}/ws/livestream"
+def verify_with_playwright(cdp_ws_url: str, headers: dict) -> None:
+    """通过 CDP 连接 browsertool，打开目标页并校验 title，同时截图。"""
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        browser = p.chromium.connect_over_cdp(cdp_ws_url, headers=headers)
+        # 复用 browsertool 已 launch 的默认 context
+        context = browser.contexts[0] if browser.contexts else browser.new_context()
+        page = context.new_page()
+        try:
+            page.goto(TARGET_URL, wait_until="domcontentloaded", timeout=30000)
+            title = page.title()
+            print(f"  page.title() = {title!r}")
+            assert "Example" in title, f"unexpected title: {title!r}"
+
+            page.screenshot(path=SCREENSHOT_PATH, full_page=True)
+            print(f"  ✓ 截图已保存: {SCREENSHOT_PATH}")
+            print("  ✓ Playwright over CDP 验证通过")
+        finally:
+            page.close()
+            browser.close()
+
+
+sbx = None
+try:
+    sbx = Sandbox.create(template=TEMPLATE_NAME, timeout=900, **OPTS)
+    print(f"sandbox_id: {sbx.sandbox_id}")
+
+    host = sbx.get_host(BROWSERTOOL_PORT)
+    cdp_ws_url = f"wss://{host}/ws/automation"
+    vnc_ws_url = f"wss://{host}/ws/livestream"
+    # e2b 公网网关要求 X-Access-Token 头，否则请求/WS 升级 403
+    token = sbx._envd_access_token
+    print("\n--- WebSocket 端点 ---")
+    print(f"  host: {host}")
+    print(f"  CDP : {cdp_ws_url}")
+    print(f"  VNC : {vnc_ws_url}")
+
+    print("\n--- 等待健康检查 ---")
+    wait_until_healthy(sbx, host, token)
+
+    print("\n--- Playwright CDP 用例 ---")
+    headers = {}
+    if token:
+        headers["X-Access-Token"] = token
+    verify_with_playwright(cdp_ws_url, headers)
+
+    print("\n--- VNC livestream 用例 ---")
+    verify_vnc_handshake(sbx, host, token)
+finally:
+    if sbx is not None:
+        sbx.kill()
+        print("\n沙箱已销毁")
 ```
 
-> **说明**：连接 CDP/VNC 端点时需要在请求头中携带 `X-Access-Token` 进行身份验证。使用 SDK 时可通过 `sbx._envd_access_token` 获取该 Token。注意 `_envd_access_token` 属于 SDK 内部属性，后续版本可能重命名或移除；JS SDK 可使用公开字段 `sbx.envdAccessToken`。
-
-### 第四步：连接并执行自动化脚本
-
-将上一步获取的 CDP 端点传入自动化框架脚本中，即可连接到 browser 沙箱并执行任务。
-
-**Python Playwright 连接示例**：
-
-```python
-from playwright.sync_api import sync_playwright
-
-headers = {"X-Access-Token": sbx._envd_access_token}
-
-with sync_playwright() as playwright:
-    browser = playwright.chromium.connect_over_cdp(cdp_ws_url, headers=headers)
-    context = browser.contexts[0] if browser.contexts else browser.new_context()
-    page = context.new_page()
-    page.goto("https://example.com", wait_until="domcontentloaded", timeout=30000)
-    print(page.title())
-    page.close()
-    browser.close()
-
-sbx.kill()
-```
-
-**Puppeteer 连接示例**：
+**Node.js**：
 
 ```javascript
-const puppeteer = require('puppeteer-core');
+// browser 模板运行示例：创建沙箱 -> 等待健康检查 -> CDP 自动化 -> 截图 -> VNC 校验。
+import { Sandbox } from '@e2b/code-interpreter';
+import { chromium } from 'playwright-core';
 
-const cdpEndpoint = 'wss://<sandbox-host>/ws/automation';
-const accessToken = '<access-token>';
+const API_KEY = 'e2b_xxx'; // 替换为您的 API Key
+const API_URL = 'https://api.cn-beijing.e2b.fc.aliyuncs.com';
+const DOMAIN = 'cn-beijing.e2b.fc.aliyuncs.com';
+const OPTS = { apiKey: API_KEY, apiUrl: API_URL, domain: DOMAIN };
 
-async function main() {
-  const browser = await puppeteer.connect({
-    browserWSEndpoint: cdpEndpoint,
-    headers: { 'X-Access-Token': accessToken },
-  });
+const TPL_NAME = 'my-browser-template';
 
-  const page = await browser.newPage();
-  await page.goto('https://example.com');
-  await page.screenshot({ path: 'example.png' });
-  console.log('Screenshot taken!');
-  await browser.close();
+const BROWSERTOOL_PORT = 3000;
+const TARGET_URL = 'https://example.com';
+const SCREENSHOT_PATH = 'browser-example.png';
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** 轮询公网网关 /health 端点，直到 browser 服务就绪或超时。 */
+async function waitUntilHealthy(sbx, host, token, timeout = 60) {
+  // 走公网网关 host（3000-<sandboxId>.<domain>），需带 X-Access-Token 头。
+  const tokenHeader = token ? `-H 'X-Access-Token: ${token}' ` : '';
+  const deadline = Date.now() + timeout * 1000;
+  while (Date.now() < deadline) {
+    // 服务未起时 curl 会以非 0 退出（连接失败），e2b 会抛 CommandExitError，
+    // 该异常同样携带 stdout，捕获后按未就绪处理继续轮询。
+    let result;
+    try {
+      result = await sbx.commands.run(
+        `curl -sS -o /dev/null -w '%{http_code}' -m 4 ` +
+          tokenHeader +
+          `https://${host}/health`,
+        { timeoutMs: 10_000 },
+      );
+    } catch (e) {
+      result = e;
+    }
+    const code = (result.stdout || '').trim();
+    if (code === '200') {
+      console.log(`  ✓ /health 就绪 (HTTP ${code})`);
+      return;
+    }
+    console.log(`  ...等待 browser 服务就绪 (HTTP ${JSON.stringify(code)})`);
+    await sleep(2000);
+  }
+  throw new Error(`browser 服务在 ${timeout}s 内未就绪`);
 }
 
-main();
-```
-
-**Playwright 连接示例**：
-
-```javascript
-const { chromium } = require('playwright-core');
-
-const cdpEndpoint = 'wss://<sandbox-host>/ws/automation';
-const accessToken = '<access-token>';
-
-async function main() {
-  const browser = await chromium.connectOverCDP(cdpEndpoint, {
-    headers: { 'X-Access-Token': accessToken },
-  });
-
-  const page = await browser.newPage();
-  await page.goto('https://example.com');
-  await page.screenshot({ path: 'example.png' });
-  console.log('Screenshot taken!');
-  await browser.close();
+/** 探测公网网关 /ws/livestream 的 WebSocket 握手，返回 101 即视为 VNC 就绪。 */
+async function verifyVncHandshake(sbx, host, token) {
+  // 升级成功后连接会保持为 WebSocket，curl 会一直读到 -m 超时（退出码 28），
+  // 这属于预期行为，用 `|| true` 吞掉退出码，只解析已收到的响应头。
+  // 走公网网关 host（3000-<sandboxId>.<domain>），需带 X-Access-Token 头。
+  const tokenHeader = token ? `-H 'X-Access-Token: ${token}' ` : '';
+  const cmd =
+    `curl -sS -i -m 4 ` +
+    `-H 'Connection: Upgrade' ` +
+    `-H 'Upgrade: websocket' ` +
+    `-H 'Sec-WebSocket-Version: 13' ` +
+    `-H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' ` +
+    tokenHeader +
+    `https://${host}/ws/livestream || true`;
+  const result = await sbx.commands.run(cmd, { timeoutMs: 15_000 });
+  const out = result.stdout || '';
+  const statusLine = out.trim() ? out.split('\n')[0].trim() : '<无响应>';
+  console.log(`  /ws/livestream 响应: ${JSON.stringify(statusLine)}`);
+  if (!(out.includes('101') && out.includes('Switching Protocols'))) {
+    throw new Error(`VNC 端点未能升级为 WebSocket: ${JSON.stringify(out.slice(0, 200))}`);
+  }
+  console.log('  ✓ VNC (livestream) 端点握手通过');
 }
 
-main();
+/** 通过 CDP 连接 browsertool，打开目标页并校验 title，同时截图。 */
+async function verifyWithPlaywright(cdpWsUrl, headers) {
+  const browser = await chromium.connectOverCDP(cdpWsUrl, { headers });
+  // 复用 browsertool 已 launch 的默认 context
+  const contexts = browser.contexts();
+  const context = contexts.length ? contexts[0] : await browser.newContext();
+  const page = await context.newPage();
+  try {
+    await page.goto(TARGET_URL, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+    const title = await page.title();
+    console.log(`  page.title() = ${JSON.stringify(title)}`);
+    if (!title.includes('Example')) {
+      throw new Error(`unexpected title: ${JSON.stringify(title)}`);
+    }
+
+    await page.screenshot({ path: SCREENSHOT_PATH, fullPage: true });
+    console.log(`  ✓ 截图已保存: ${SCREENSHOT_PATH}`);
+    console.log('  ✓ Playwright over CDP 验证通过');
+  } finally {
+    await page.close();
+    await browser.close();
+  }
+}
+
+async function main() {
+  let sbx = null;
+  try {
+    sbx = await Sandbox.create(TPL_NAME, { ...OPTS, timeoutMs: 900_000 });
+    console.log(`sandbox_id: ${sbx.sandboxId}`);
+
+    const host = sbx.getHost(BROWSERTOOL_PORT);
+    const cdpWsUrl = `wss://${host}/ws/automation`;
+    const vncWsUrl = `wss://${host}/ws/livestream`;
+    // e2b 公网网关要求 X-Access-Token 头，否则请求/WS 升级 403
+    const token = sbx.envdAccessToken;
+    console.log('\n--- WebSocket 端点 ---');
+    console.log(`  host: ${host}`);
+    console.log(`  CDP : ${cdpWsUrl}`);
+    console.log(`  VNC : ${vncWsUrl}`);
+
+    console.log('\n--- 等待健康检查 ---');
+    await waitUntilHealthy(sbx, host, token);
+
+    console.log('\n--- Playwright CDP 用例 ---');
+    const headers = {};
+    if (token) {
+      headers['X-Access-Token'] = token;
+    }
+    await verifyWithPlaywright(cdpWsUrl, headers);
+
+    console.log('\n--- VNC livestream 用例 ---');
+    await verifyVncHandshake(sbx, host, token);
+  } finally {
+    if (sbx !== null) {
+      await sbx.kill();
+      console.log('\n沙箱已销毁');
+    }
+  }
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
 ```
 
 ## WebSocket 端点说明
@@ -257,7 +487,7 @@ from browser_use.browser import BrowserProfile
 BROWSER_SANDBOX_PORT = 3000
 
 async def main():
-    sbx = Sandbox.create(template="browser-sandbox-template", api_key=E2B_API_KEY, timeout=600)
+    sbx = Sandbox.create(template="my-browser-template", api_key=E2B_API_KEY, timeout=600)
     host = sbx.get_host(BROWSER_SANDBOX_PORT)
     cdp_url = f"wss://{host}/ws/automation"
 
@@ -302,7 +532,7 @@ from playwright.async_api import async_playwright
 BROWSER_SANDBOX_PORT = 3000
 
 # 创建沙箱并获取 CDP 端点
-sbx = Sandbox.create(template="browser-sandbox-template", api_key=E2B_API_KEY, timeout=600)
+sbx = Sandbox.create(template="my-browser-template", api_key=E2B_API_KEY, timeout=600)
 host = sbx.get_host(BROWSER_SANDBOX_PORT)
 cdp_url = f"wss://{host}/ws/automation"
 headers = {"X-Access-Token": sbx._envd_access_token}
