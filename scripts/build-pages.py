@@ -154,6 +154,13 @@ a:hover {
   font-weight: 700;
 }
 
+.nav-heading {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .nav-list {
   margin: 0;
   padding: 0;
@@ -164,18 +171,33 @@ a:hover {
   margin: 0;
 }
 
+.nav-section,
 .nav-list a {
   display: block;
   overflow: hidden;
   padding: 4px 0;
-  color: var(--muted);
   font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.nav-section {
+  margin-top: 8px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.nav-list a {
+  color: var(--muted);
+}
+
 .nav-list a:hover {
   color: var(--accent);
+}
+
+.nav-list a.active {
+  color: var(--accent);
+  font-weight: 700;
 }
 
 .nav-depth-1 {
@@ -367,14 +389,29 @@ def render_nav(
     current_output: Path,
 ) -> str:
     items = []
+    previous_dirs: tuple[str, ...] = ()
     for source in markdown_files:
         rel = source.relative_to(ROOT)
+        current_dirs = rel.parts[:-1]
+        common = common_prefix_len(previous_dirs, current_dirs)
+        for depth, part in enumerate(current_dirs[common:], start=common):
+            label = directory_label(part)
+            items.append(
+                '<li>'
+                f'<span class="nav-section nav-depth-{depth}" '
+                f'title="{html.escape("/".join(current_dirs[: depth + 1]), quote=True)}">'
+                f'{html.escape(label)}</span>'
+                '</li>'
+            )
+        previous_dirs = current_dirs
+
         title = page_titles[source]
         href = relative_href(page_links[source], current_output.parent)
         depth = max(0, len(rel.parts) - 1)
+        active = " active" if page_links[source] == current_output else ""
         items.append(
             '<li>'
-            f'<a class="nav-depth-{depth}" href="{href}" '
+            f'<a class="nav-depth-{depth}{active}" href="{href}" '
             f'title="{html.escape(rel.as_posix(), quote=True)}">'
             f'{html.escape(title)}</a>'
             '</li>'
@@ -403,6 +440,7 @@ def page_template(
   <div class="layout">
     <aside class="sidebar">
       <a class="brand" href="{html.escape(home_href, quote=True)}">阿里云函数计算官方文档</a>
+      <div class="nav-heading">目录</div>
       <ul class="nav-list">
 {nav}
       </ul>
@@ -431,13 +469,44 @@ def clean_label(value: str) -> str:
     return value.strip() or "Untitled"
 
 
+def directory_label(value: str) -> str:
+    labels = {
+        "docs": "文档",
+        "zh-CN": "中文文档",
+        "en-US": "English Docs",
+    }
+    return labels.get(value, clean_label(value))
+
+
+def common_prefix_len(left: tuple[str, ...], right: tuple[str, ...]) -> int:
+    count = 0
+    for left_part, right_part in zip(left, right):
+        if left_part != right_part:
+            break
+        count += 1
+    return count
+
+
 def relative_href(target: Path, start: Path) -> str:
     rel = Path(os.path.relpath(target, start=start)).as_posix()
     return quote(rel, safe="/%")
 
 
 def sort_key(path: Path) -> tuple[str, ...]:
-    return tuple(part.casefold() for part in path.parts)
+    parts = path.parts
+    if path.name == "README.md":
+        return ("0",)
+    if path.name == "README.en-US.md":
+        return ("1",)
+    if parts[:2] == ("docs", "zh-CN"):
+        return ("2", *natural_sort_parts(parts))
+    if parts[:2] == ("docs", "en-US"):
+        return ("3", *natural_sort_parts(parts))
+    return ("4", *natural_sort_parts(parts))
+
+
+def natural_sort_parts(parts: tuple[str, ...]) -> tuple[str, ...]:
+    return tuple(part.casefold() for part in parts)
 
 
 if __name__ == "__main__":
