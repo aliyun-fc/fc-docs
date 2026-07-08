@@ -62,10 +62,33 @@ Whether you need to explicitly specify a `template` for the code-interpreter-v1 
 import os
 from e2b_code_interpreter import Sandbox
 
-sbx = Sandbox.create(api_key=os.environ["E2B_API_KEY"])
+sbx = Sandbox.create(
+    api_key=os.environ["E2B_API_KEY"],
+    api_url=os.environ["E2B_API_URL"],
+    domain=os.environ["E2B_DOMAIN"],
+)
 execution = sbx.run_code("print('hello from code interpreter')")
 print(execution.logs.stdout)
 sbx.kill()
+```
+
+TypeScript example:
+
+```typescript
+import { Sandbox } from "@e2b/code-interpreter";
+
+const sbx = await Sandbox.create("code-interpreter-v1", {
+  apiKey: process.env.E2B_API_KEY,
+  apiUrl: process.env.E2B_API_URL,
+  domain: process.env.E2B_DOMAIN,
+});
+
+try {
+  const execution = await sbx.runCode("print('hello from code interpreter')");
+  console.log(execution.logs.stdout);
+} finally {
+  await sbx.kill();
+}
 ```
 
 **Using the `e2b` SDK:**
@@ -77,6 +100,8 @@ from e2b import Sandbox
 sbx = Sandbox.create(
     template="code-interpreter-v1",
     api_key=os.environ["E2B_API_KEY"],
+    api_url=os.environ["E2B_API_URL"],
+    domain=os.environ["E2B_DOMAIN"],
 )
 result = sbx.commands.run("python --version")
 print(result.stdout)

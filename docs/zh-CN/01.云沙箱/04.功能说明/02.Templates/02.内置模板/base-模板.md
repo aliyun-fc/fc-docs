@@ -46,6 +46,8 @@ from e2b import Sandbox
 
 sbx = Sandbox.create(
     api_key=os.environ["E2B_API_KEY"],
+    api_url=os.environ["E2B_API_URL"],
+    domain=os.environ["E2B_DOMAIN"],
     timeout=600,
 )
 
@@ -53,6 +55,26 @@ result = sbx.commands.run("echo hello from base template")
 print(result.stdout)
 
 sbx.kill()
+```
+
+TypeScript 示例：
+
+```typescript
+import { Sandbox } from "e2b";
+
+const sbx = await Sandbox.create({
+  apiKey: process.env.E2B_API_KEY,
+  apiUrl: process.env.E2B_API_URL,
+  domain: process.env.E2B_DOMAIN,
+  timeoutMs: 600_000,
+});
+
+try {
+  const result = await sbx.commands.run("echo hello from base template");
+  console.log(result.stdout);
+} finally {
+  await sbx.kill();
+}
 ```
 
 ## 相关文档
