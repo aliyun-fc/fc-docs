@@ -2,7 +2,7 @@
 
 The base template provides a minimal FC Agent Sandbox runtime that contains only the E2B envd-compatible base service. It suits scenarios where you need to manage the sandbox lifecycle through an E2B-compatible SDK, run basic commands, access the file system, or use it as a baseline for custom capabilities.
 
-The base template aligns with the base experience around E2B Commands, Filesystem, and the Sandbox lifecycle, and is the shared capability foundation of the code-interpreter-v1 template, the browser template, and the all-in-one template.
+The base template aligns with the base experience around E2B Commands, Filesystem, and the Sandbox lifecycle, and is the shared capability foundation of the code-interpreter-v1 template, the browser template, and the All-In-One template.
 
 ## Features
 
@@ -35,7 +35,7 @@ The default configuration of the base template is as follows:
 
 ## Quickstart
 
-If you need the code interpreter, browser automation, or both, choose the [code-interpreter-v1 template](Code%20Interpreter%20v1%20Template.md), the [browser template](Browser%20Template.md), or the [all-in-one template](All-in-One%20Template.md) respectively.
+If you need the code interpreter, browser automation, or both, choose the [code-interpreter-v1 template](Code%20Interpreter%20v1%20Template.md), the [browser template](Browser%20Template.md), or the [All-In-One template](All-in-One%20Template.md) respectively.
 
 When you do not explicitly specify a `template`, a base sandbox is created by default.
 
@@ -84,4 +84,4 @@ try {
 - [Lifecycle](../../01.Sandbox/01.Lifecycle.md)
 - [Code Interpreter v1 Template](Code%20Interpreter%20v1%20Template.md)
 - [Browser Template](Browser%20Template.md)
-- [All-in-One Template](All-in-One%20Template.md)
+- [All-In-One Template](All-in-One%20Template.md)

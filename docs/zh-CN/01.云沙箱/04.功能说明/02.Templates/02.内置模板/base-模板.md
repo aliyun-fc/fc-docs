@@ -2,7 +2,7 @@
 
 base 模板提供最小化的云沙箱运行环境，只包含 E2B envd 兼容基础服务。它适合需要通过 E2B 兼容 SDK 管理沙箱生命周期、运行基础命令、访问文件系统或作为自定义能力基线的场景。
 
-base 模板提供与 E2B Commands、Filesystem、Sandbox 生命周期相关的基础体验对齐能力，是 code-interpreter-v1 模板、browser 模板和 all in one 模板的共同能力基础。
+base 模板提供与 E2B Commands、Filesystem、Sandbox 生命周期相关的基础体验对齐能力，是 code-interpreter-v1 模板、browser 模板和 All-In-One 模板的共同能力基础。
 
 ## 功能特性
 
@@ -35,7 +35,7 @@ base 模板的默认配置如下：
 
 ## 快速入门
 
-如果需要代码解释器、浏览器自动化或二者组合能力，请分别选择 [code-interpreter-v1 模板](code-interpreter-v1-模板.md)、[browser 模板](browser-模板.md) 或 [all in one 模板](all-in-one-模板.md)。
+如果需要代码解释器、浏览器自动化或二者组合能力，请分别选择 [code-interpreter-v1 模板](code-interpreter-v1-模板.md)、[browser 模板](browser-模板.md) 或 [All-In-One 模板](all-in-one-模板.md)。
 
 未显式指定 `template` 时，默认创建 base 沙箱。
 
@@ -84,4 +84,4 @@ try {
 - [生命周期](../../01.Sandbox/01.生命周期.md)
 - [code-interpreter-v1 模板](code-interpreter-v1-模板.md)
 - [browser 模板](browser-模板.md)
-- [all in one 模板](all-in-one-模板.md)
+- [All-In-One 模板](all-in-one-模板.md)

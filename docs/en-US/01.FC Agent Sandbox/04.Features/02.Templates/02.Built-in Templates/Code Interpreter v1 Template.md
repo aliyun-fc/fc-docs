@@ -289,4 +289,4 @@ A sandbox instance goes through the following states during its lifecycle:
 - [Lifecycle](../../01.Sandbox/01.Lifecycle.md)
 - [Base Template](Base%20Template.md) (choose when you only need the envd base capabilities)
 - [Browser Template](Browser%20Template.md) (choose when you only need browser automation)
-- [All-in-One Template](All-in-One%20Template.md) (choose when you need both browser and code execution)
+- [All-In-One Template](All-in-One%20Template.md) (choose when you need both browser and code execution)

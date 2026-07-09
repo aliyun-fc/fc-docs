@@ -586,4 +586,4 @@ if __name__ == "__main__":
 - [生命周期](../../01.Sandbox/01.生命周期.md)
 - [base 模板](base-模板.md)（仅需 envd 基础能力时选择）
 - [code-interpreter-v1 模板](code-interpreter-v1-模板.md)（仅需代码执行能力时选择）
-- [all in one 模板](all-in-one-模板.md)（需要同时使用浏览器和代码执行能力时选择）
+- [All-In-One 模板](all-in-one-模板.md)（需要同时使用浏览器和代码执行能力时选择）
