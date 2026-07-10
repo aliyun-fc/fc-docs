@@ -58,6 +58,7 @@ Code Interpreter API 分为控制面和数据面两个层面：
 
 **使用 `e2b_code_interpreter` SDK：**
 
+**Python 示例**：
 ```python
 import os
 from e2b_code_interpreter import Sandbox
@@ -72,7 +73,7 @@ print(execution.logs.stdout)
 sbx.kill()
 ```
 
-TypeScript 示例：
+**TypeScript 示例**：
 
 ```typescript
 import { Sandbox } from "@e2b/code-interpreter";
@@ -92,6 +93,8 @@ try {
 ```
 
 **使用 `e2b` SDK：**
+
+**Python 示例**：
 
 ```python
 import os

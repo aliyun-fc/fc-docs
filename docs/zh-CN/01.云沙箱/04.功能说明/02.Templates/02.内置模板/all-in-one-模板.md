@@ -31,7 +31,7 @@ All-In-One 模板的默认配置如下：
 
 | **配置项** | **默认值** | **说明** |
 | --- | --- | --- |
-| 容器镜像 | `fc-e2b-registry.ap-southeast-1.cr.aliyuncs.com/runtime/all-in-one:v0.0.36` | 预置一体化沙箱镜像 |
+| 容器镜像 | `fc-e2b-registry.cn-beijing.cr.aliyuncs.com/runtime/all-in-one:v0.0.36` | 预置一体化沙箱镜像 |
 | 浏览器端口 | 3000 | browser 服务监听端口，用于 `/health`、CDP 和 VNC |
 | 代码执行端口 | 5000 | Code Interpreter/envd 服务监听端口 |
 | CPU | 4 vCPU | 推荐规格，需同时支撑浏览器和代码执行 |
@@ -40,7 +40,7 @@ All-In-One 模板的默认配置如下：
 
 > **说明**
 >
-> All-In-One 模板的默认 CPU 和内存规格高于 code-interpreter-v1 模板和 browser 模板，因为需要同时支撑浏览器运行时和代码执行环境。示例镜像位于新加坡地域（`ap-southeast-1`），构建和运行模板时建议使用同地域的 API URL 与域名。
+> All-In-One 模板的默认 CPU 和内存规格高于 code-interpreter-v1 模板和 browser 模板，因为需要同时支撑浏览器运行时和代码执行环境。示例镜像位于北京地域（`cn-beijing`），构建和运行模板时建议使用同地域的 API URL 与域名。
 
 ## 与 browser 模板的区别
 
@@ -73,7 +73,7 @@ All-In-One 模板的完整用法分为两个阶段：先**构建模板**（从 A
 
 ### 第二步：准备本地环境
 
-**Python**：
+**Python 示例**：
 
 ```bash
 uv venv .venv --python 3.12
@@ -82,7 +82,7 @@ uv pip install e2b e2b-code-interpreter 'playwright>=1.49.0'
 playwright install chromium
 ```
 
-**Node.js**：使用如下 `package.json`，然后执行 `npm install`。
+**TypeScript 示例**：使用如下 `package.json`，然后执行 `npm install`。
 
 ```json
 {
@@ -106,7 +106,7 @@ playwright install chromium
 
 从 All-In-One 镜像构建一个带名称的模板，构建时指定 CPU 与内存规格（推荐 4 vCPU / 8192 MB）。
 
-**Python**：
+**Python 示例**：
 
 ```python
 """All-In-One 模板构建示例。"""
@@ -114,9 +114,9 @@ playwright install chromium
 from e2b import Template, default_build_logger
 
 API_KEY = "e2b_xxx"  # 替换为您的 API Key
-API_URL = "https://api.ap-southeast-1.e2b.fc.aliyuncs.com"
-DOMAIN = "ap-southeast-1.e2b.fc.aliyuncs.com"
-FROM_IMAGE = "fc-e2b-registry.ap-southeast-1.cr.aliyuncs.com/runtime/all-in-one:v0.0.36"
+API_URL = "https://api.cn-beijing.e2b.fc.aliyuncs.com"
+DOMAIN = "cn-beijing.e2b.fc.aliyuncs.com"
+FROM_IMAGE = "fc-e2b-registry.cn-beijing.cr.aliyuncs.com/runtime/all-in-one:v0.0.36"
 OPTS = {"api_key": API_KEY, "api_url": API_URL, "domain": DOMAIN}
 
 TEMPLATE_NAME = "my-all-in-one-template"
@@ -135,17 +135,17 @@ print(f"template_id: {build.template_id}")
 print(f"build_id: {build.build_id}")
 ```
 
-**Node.js**：
+**TypeScript 示例**：
 
 ```javascript
 // All-In-One 模板构建示例。
 import { Template, defaultBuildLogger } from 'e2b';
 
 const API_KEY = 'e2b_xxx'; // 替换为您的 API Key
-const API_URL = 'https://api.ap-southeast-1.e2b.fc.aliyuncs.com';
-const DOMAIN = 'ap-southeast-1.e2b.fc.aliyuncs.com';
+const API_URL = 'https://api.cn-beijing.e2b.fc.aliyuncs.com';
+const DOMAIN = 'cn-beijing.e2b.fc.aliyuncs.com';
 const FROM_IMAGE =
-  'fc-e2b-registry.ap-southeast-1.cr.aliyuncs.com/runtime/all-in-one:v0.0.36';
+  'fc-e2b-registry.cn-beijing.cr.aliyuncs.com/runtime/all-in-one:v0.0.36';
 const OPTS = { apiKey: API_KEY, apiUrl: API_URL, domain: DOMAIN };
 
 const TPL_NAME = 'my-all-in-one-template';
@@ -173,7 +173,7 @@ main().catch((err) => {
 
 创建沙箱后，先轮询 `/health` 等待 browser 服务就绪，再通过 CDP 端点连接 Playwright 打开目标页并截图，最后通过 Code Interpreter 执行一段 Python 代码验证代码执行能力。
 
-**Python**：
+**Python 示例**：
 
 ```python
 """All-In-One 模板运行示例：创建沙箱 -> CDP 自动化 -> Code Interpreter 执行代码。"""
@@ -183,8 +183,8 @@ import time
 from e2b_code_interpreter import Sandbox
 
 API_KEY = "e2b_xxx"  # 替换为您的 API Key
-API_URL = "https://api.ap-southeast-1.e2b.fc.aliyuncs.com"
-DOMAIN = "ap-southeast-1.e2b.fc.aliyuncs.com"
+API_URL = "https://api.cn-beijing.e2b.fc.aliyuncs.com"
+DOMAIN = "cn-beijing.e2b.fc.aliyuncs.com"
 OPTS = {"api_key": API_KEY, "api_url": API_URL, "domain": DOMAIN}
 
 TEMPLATE_NAME = "my-all-in-one-template"
@@ -264,7 +264,7 @@ finally:
         print("\n沙箱已销毁")
 ```
 
-**Node.js**：
+**TypeScript 示例**：
 
 ```javascript
 // All-In-One 模板运行示例：创建沙箱 -> CDP 自动化 -> Code Interpreter 执行代码。
@@ -272,8 +272,8 @@ import { Sandbox } from '@e2b/code-interpreter';
 import { chromium } from 'playwright-core';
 
 const API_KEY = 'e2b_xxx'; // 替换为您的 API Key
-const API_URL = 'https://api.ap-southeast-1.e2b.fc.aliyuncs.com';
-const DOMAIN = 'ap-southeast-1.e2b.fc.aliyuncs.com';
+const API_URL = 'https://api.cn-beijing.e2b.fc.aliyuncs.com';
+const DOMAIN = 'cn-beijing.e2b.fc.aliyuncs.com';
 const OPTS = { apiKey: API_KEY, apiUrl: API_URL, domain: DOMAIN };
 
 const TPL_NAME = 'my-all-in-one-template';

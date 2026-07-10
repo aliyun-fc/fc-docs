@@ -39,6 +39,8 @@ base 模板的默认配置如下：
 
 未显式指定 `template` 时，默认创建 base 沙箱。
 
+**Python 示例**：
+
 ```python
 import os
 
@@ -57,7 +59,7 @@ print(result.stdout)
 sbx.kill()
 ```
 
-TypeScript 示例：
+**TypeScript 示例**：
 
 ```typescript
 import { Sandbox } from "e2b";

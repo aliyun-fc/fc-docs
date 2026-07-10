@@ -52,7 +52,7 @@ browser 模板的完整用法分为两个阶段：先**构建模板**（从 brow
 
 ### 第二步：准备本地环境
 
-**Python**：
+**Python 示例**：
 
 ```bash
 uv venv .venv --python 3.12
@@ -61,7 +61,7 @@ uv pip install e2b e2b-code-interpreter 'playwright>=1.49.0'
 playwright install chromium
 ```
 
-**Node.js**：使用如下 `package.json`，然后执行 `npm install`。
+**TypeScript 示例**：使用如下 `package.json`，然后执行 `npm install`。
 
 ```json
 {
@@ -85,7 +85,7 @@ playwright install chromium
 
 从 browser 镜像构建一个带名称的模板，构建时指定 CPU 与内存规格（推荐 4 vCPU / 8192 MB）。
 
-**Python**：
+**Pytho 示例n**：
 
 ```python
 """browser 模板构建示例。"""
@@ -114,7 +114,7 @@ print(f"template_id: {build.template_id}")
 print(f"build_id: {build.build_id}")
 ```
 
-**Node.js**：
+**TypeScript 示例**：
 
 ```javascript
 // browser 模板构建示例。
@@ -152,7 +152,7 @@ main().catch((err) => {
 
 创建沙箱后，先轮询 `/health` 等待 browser 服务就绪，再通过 CDP 端点连接 Playwright 打开目标页并截图，最后校验 VNC（livestream）端点握手。
 
-**Python**：
+**Python 示例**：
 
 ```python
 """browser 模板运行示例：创建沙箱 -> 等待健康检查 -> CDP 自动化 -> 截图 -> VNC 校验。"""
@@ -274,7 +274,7 @@ finally:
         print("\n沙箱已销毁")
 ```
 
-**Node.js**：
+**TypeScript 示例**：
 
 ```javascript
 // browser 模板运行示例：创建沙箱 -> 等待健康检查 -> CDP 自动化 -> 截图 -> VNC 校验。
