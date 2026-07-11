@@ -1,6 +1,6 @@
 # All-In-One Template
 
-The All-In-One template combines the browser template and the code-interpreter-v1 template in one isolated cloud execution environment. An All-In-One sandbox can drive a cloud browser over CDP/VNC and, in the same sandbox, execute Python/JavaScript code, process files, and run terminal commands. It is suitable for AI Agent scenarios that need browser automation and code execution to work together.
+The All-In-One template combines the capabilities of the browser template and the code-interpreter-v1 template into a single, unified cloud-based isolated execution environment. An All-In-One sandbox can drive a cloud browser via CDP/VNC and, within the same sandbox, execute Python/JavaScript code, process files, and run terminal commands. It is ideal for AI Agent scenarios that require coordinated "browser automation + code execution."
 
 The All-In-One template aligns with the E2B experience of using browser automation and Code Interpreter together.
 
@@ -8,70 +8,70 @@ The All-In-One template aligns with the E2B experience of using browser automati
 
 | **Feature** | **Description** |
 | --- | --- |
-| Browser automation | Ships with Chromium/Chrome, supports CDP over WebSocket, and is compatible with Puppeteer, Playwright, BrowserUse, and other automation frameworks |
-| Real-time VNC | Built-in VNC service lets you view the browser desktop in real time through a noVNC client, making debugging and monitoring easy |
-| Code execution | Integrates Code Interpreter capabilities, including Python/JavaScript execution, persistent contexts, and result output |
-| File system operations | Supports file APIs such as upload, download, read, write, and directory management, so browser-collected data can be processed by code |
-| Terminal commands | Supports synchronous command execution and an interactive WebSocket terminal (TTY) |
-| Coordinated execution | Complete workflows such as "browser visits a dynamic page -> code parses/analyzes data -> files are exported" in one sandbox session |
-| Secure isolation | Each All-In-One sandbox instance has its own file system, browser instance, and process space |
+| Browser automation | Built-in Chromium/Chrome browser with CDP over WebSocket support, compatible with Puppeteer, Playwright, BrowserUse, and other automation frameworks |
+| Real-time VNC visualization | Built-in VNC service for real-time viewing of the browser desktop environment via a noVNC client, convenient for debugging and monitoring |
+| Code execution | Integrated Code Interpreter capabilities supporting Python/JavaScript execution, context persistence, and result output |
+| File system operations | Supports file APIs including upload, download, read, write, and directory management, enabling browser-collected results to be handed off to code for further processing |
+| Terminal commands | Supports synchronous command execution and WebSocket-based interactive terminal (TTY) |
+| Coordinated execution | Complete end-to-end workflows such as "browser visits a dynamic page → code parses/analyzes → file export" within a single sandbox session |
+| Secure isolation | Each All-In-One sandbox instance has its own independent file system, browser instance, and process space |
 
-## Use cases
+## Use Cases
 
 | **Scenario** | **Description** |
 | --- | --- |
-| AI Agent composite tasks | Drive the browser for page interaction and run code for data analysis, reasoning support, or file processing in the same session |
+| AI Agent composite tasks | Drive the browser for page interaction while running code for data analysis, reasoning assistance, or file processing in the same session |
 | Data collection and processing | Use the browser to scrape dynamic pages, take screenshots, or download files, then use Python scripts to parse, clean, summarize, and export the results |
-| Automated testing | Run browser E2E tests, backend scripts, log analysis, and report generation in one isolated container |
-| Content generation and archiving | Generate screenshots, PDFs, recordings, or structured data, then download the results through the file APIs |
+| Automated testing | Combine browser E2E tests with backend scripts, log analysis, and report generation in a single isolated container |
+| Content generation and archiving | Generate screenshots, PDFs, video recordings, or structured data, and download the results via the file APIs |
 
-## Default configuration
+## Default Configuration
 
 The default configuration of the All-In-One template is as follows:
 
-| **Item** | **Default** | **Description** |
+| **Configuration** | **Default** | **Description** |
 | --- | --- | --- |
 | Container image | `fc-e2b-registry.ap-southeast-1.cr.aliyuncs.com/runtime/all-in-one:v0.0.36` | Prebuilt All-In-One sandbox image |
-| Browser port | 3000 | Port for the browser service, including `/health`, CDP, and VNC |
-| Code execution port | 5000 | Port for the Code Interpreter/envd service |
-| CPU | 4 vCPU | Recommended spec because the sandbox runs both the browser and code execution environment |
+| Browser port | 3000 | Browser service listening port for `/health`, CDP, and VNC |
+| Code execution port | 5000 | Code Interpreter/envd service listening port |
+| CPU | 4 vCPU | Recommended spec to support both browser and code execution |
 | Memory | 8192 MB | Recommended spec |
-| Disk size | 10240 MB | 10 GB is recommended for browser cache, screenshots, downloaded files, and code execution results |
+| Disk size | 10240 MB | 10 GB recommended for browser cache, screenshots, downloaded files, and code execution results |
 
 > **Note**
 >
-> The All-In-One template uses higher CPU and memory specs than the code-interpreter-v1 template and the browser template because it must run both the browser runtime and the code execution environment. The example image is in the Singapore region (`ap-southeast-1`), so build and run the template with an API URL and domain from the same region.
+> The All-In-One template's default CPU and memory specs are higher than those of the code-interpreter-v1 template and the browser template because it must support both the browser runtime and the code execution environment. The example image is hosted in the Singapore region (`ap-southeast-1`); when building and running the template, it is recommended to use the API URL and domain from the same region.
 
-## Difference from the browser template
+## Differences from the Browser Template
 
-The browser template provides a browser runtime and exposes CDP and VNC through port 3000 by default. It suits browser automation tasks such as web access, page interaction, screenshots, data collection, and UI testing. It includes E2B envd-compatible base capabilities but does not provide the Code Interpreter service, so you cannot execute Python directly through a Code Interpreter context.
+The browser template provides a browser runtime and exposes CDP and VNC capabilities through port 3000 by default. It is suited for browser automation tasks such as web access, page interaction, screenshots, data collection, and UI testing. It includes E2B envd-compatible base capabilities but does not provide the Code Interpreter service, so Python cannot be executed directly through a Code Interpreter context.
 
-The All-In-One template layers the Code Interpreter service on top of the browser capabilities. It uses port 3000 as the browser entry and port 5000 as the code execution and file management entry by default. It can execute Python directly in the same sandbox session, enabling composite flows such as "browser scrapes a dynamic page -> Python parses/cleans/analyzes -> files are exported."
+The All-In-One template layers the Code Interpreter service on top of the browser capabilities. It uses port 3000 as the browser entry and port 5000 as the code execution and file management entry by default. It can execute Python directly in the same sandbox session, enabling composite flows such as "browser scrapes a dynamic page → Python parses/cleans/analyzes → files are exported."
 
-| **Comparison** | **Browser template** | **All-In-One template** |
+| **Comparison** | **Browser Template** | **All-In-One Template** |
 | --- | --- | --- |
 | Core positioning | Lightweight browser automation environment | Integrated browser automation + code execution environment |
 | Browser capabilities | Supports CDP, VNC, screenshots, and page interaction | Supports CDP, VNC, screenshots, and page interaction |
 | Code Interpreter service | Not supported | Supported |
-| Code execution | Cannot execute Python through Code Interpreter | Supports Python/JavaScript code execution |
-| File processing | Supports basic file access, no Code Interpreter file API | Supports file APIs plus in-context read/write and processing |
-| Typical entries | 3000 (browser entry) | 3000 (browser entry) / 5000 (code entry) |
+| Code execution | Cannot execute Python via Code Interpreter | Supports Python/JavaScript code execution |
+| File processing | Supports basic file access; no Code Interpreter file API | Supports file APIs with in-context read/write and processing |
+| Typical entry points | 3000 (browser entry) | 3000 (browser entry) / 5000 (code entry) |
 | Recommended spec | 4 vCPU / 8192 MB / 10240 MB disk | 4 vCPU / 8192 MB / 10240 MB disk |
 | Recommended for | Only browser automation is needed | Browser automation and code execution need to work together |
 
 ## Quickstart
 
-The full workflow for the All-In-One template has two phases: first **build the template** (materialize a named template from the All-In-One image), then **run the template** (create a sandbox, wait for the browser health check, automate over CDP and take a screenshot, and execute code through Code Interpreter). The Python and Node.js implementations are shown below.
+The complete usage of the All-In-One template is divided into two phases: first **build the template** (materialize a named template from the All-In-One image), then **run the template** (create a sandbox, wait for the browser service health check, automate via CDP and take screenshots, and execute code through Code Interpreter). Both Python and Node.js implementations are provided below.
 
-> **Note**: Replace `API_KEY` in the examples with the API key you generated in the console, and replace `API_URL` / `DOMAIN` with the endpoint of the corresponding region. When you connect to the CDP/VNC endpoints, you must include the `X-Access-Token` header for authentication: the Python SDK exposes it through the internal attribute `sbx._envd_access_token` (which may be renamed or removed in future versions), and the JS SDK exposes the public field `sbx.envdAccessToken`.
+> **Note**: Replace `API_KEY` in the examples with the API Key you generated in the console, and replace `API_URL` / `DOMAIN` with the endpoint of the corresponding region. When connecting to CDP/VNC endpoints, you must include the `X-Access-Token` header for authentication: the Python SDK exposes it via the internal attribute `sbx._envd_access_token` (which may be renamed or removed in future versions), and the JS SDK exposes the public field `sbx.envdAccessToken`.
 
-### Step 1: Create an API key
+### Step 1: Create an API Key
 
 1. Log in to the [Function Compute console](https://fcnext.console.aliyun.com/).
-2. On the **FC Agent Sandbox** tab, choose **API Keys** and generate an API key.
-3. Use the API key and API endpoint through an SDK to build the template and create a sandbox.
+2. Under the **FC Agent Sandbox** tab, select **API Keys** and generate an API Key.
+3. Use the API Key and API endpoint through the SDK to build the template and create a sandbox.
 
-### Step 2: Prepare the local environment
+### Step 2: Prepare the Local Environment
 
 **Python**:
 
@@ -82,7 +82,7 @@ uv pip install e2b==2.31.0 e2b-code-interpreter==2.8.1 'playwright>=1.49.0'
 playwright install chromium
 ```
 
-**Node.js**: use the following `package.json`, then run `npm install`.
+**Node.js**: Use the following `package.json`, then run `npm install`.
 
 ```json
 {
@@ -102,9 +102,9 @@ playwright install chromium
 }
 ```
 
-### Step 3: Build the All-In-One template
+### Step 3: Build the All-In-One Template
 
-Build a named template from the All-In-One image, specifying the CPU and memory (4 vCPU / 8192 MB recommended) at build time.
+Build a named template from the All-In-One image, specifying CPU and memory specs at build time (4 vCPU / 8192 MB recommended).
 
 **Python**:
 
@@ -113,7 +113,7 @@ Build a named template from the All-In-One image, specifying the CPU and memory 
 
 from e2b import Template, default_build_logger
 
-API_KEY = "e2b_xxx"  # Replace with your API key
+API_KEY = "e2b_xxx"  # Replace with your API Key
 API_URL = "https://api.ap-southeast-1.e2b.fc.aliyuncs.com"
 DOMAIN = "ap-southeast-1.e2b.fc.aliyuncs.com"
 FROM_IMAGE = "fc-e2b-registry.ap-southeast-1.cr.aliyuncs.com/runtime/all-in-one:v0.0.36"
@@ -141,7 +141,7 @@ print(f"build_id: {build.build_id}")
 // All-In-One template build example.
 import { Template, defaultBuildLogger } from 'e2b';
 
-const API_KEY = 'e2b_xxx'; // Replace with your API key
+const API_KEY = 'e2b_xxx'; // Replace with your API Key
 const API_URL = 'https://api.ap-southeast-1.e2b.fc.aliyuncs.com';
 const DOMAIN = 'ap-southeast-1.e2b.fc.aliyuncs.com';
 const FROM_IMAGE =
@@ -169,9 +169,9 @@ main().catch((err) => {
 });
 ```
 
-### Step 4: Run the template and verify the combined capabilities
+### Step 4: Run the Template and Verify Combined Capabilities
 
-After creating the sandbox, first poll `/health` until the browser service is ready, connect Playwright over the CDP endpoint to open the target page and take a screenshot, and then execute a Python snippet through Code Interpreter to verify code execution.
+After creating the sandbox, first poll `/health` until the browser service is ready, then connect Playwright via the CDP endpoint to open the target page and take a screenshot, and finally execute a Python snippet through Code Interpreter to verify code execution.
 
 **Python**:
 
@@ -182,7 +182,7 @@ import time
 
 from e2b_code_interpreter import Sandbox
 
-API_KEY = "e2b_xxx"  # Replace with your API key
+API_KEY = "e2b_xxx"  # Replace with your API Key
 API_URL = "https://api.ap-southeast-1.e2b.fc.aliyuncs.com"
 DOMAIN = "ap-southeast-1.e2b.fc.aliyuncs.com"
 OPTS = {"api_key": API_KEY, "api_url": API_URL, "domain": DOMAIN}
@@ -209,13 +209,13 @@ def wait_until_healthy(sbx: Sandbox, host: str, token: str, timeout: int = 60) -
         if code == "200":
             print(f"  /health ready (HTTP {code})")
             return
-        print(f"  ...waiting for the browser service (HTTP {code!r})")
+        print(f"  ...waiting for browser service (HTTP {code!r})")
         time.sleep(2)
     raise TimeoutError(f"browser service not ready within {timeout}s")
 
 
 def verify_with_playwright(cdp_ws_url: str, headers: dict) -> None:
-    """Connect to browsertool over CDP, open the target page, and take a screenshot."""
+    """Connect to browsertool via CDP, open the target page, and take a screenshot."""
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as p:
@@ -248,10 +248,10 @@ try:
     print("\n--- Waiting for browser health check ---")
     wait_until_healthy(sbx, host, token)
 
-    print("\n--- Playwright CDP case ---")
+    print("\n--- Playwright CDP example ---")
     verify_with_playwright(cdp_ws_url, headers)
 
-    print("\n--- Code Interpreter case ---")
+    print("\n--- Code Interpreter example ---")
     execution = sbx.run_code(
         "import json\n"
         "result = {'status': 'ok', 'source': 'all-in-one'}\n"
@@ -271,7 +271,7 @@ finally:
 import { Sandbox } from '@e2b/code-interpreter';
 import { chromium } from 'playwright-core';
 
-const API_KEY = 'e2b_xxx'; // Replace with your API key
+const API_KEY = 'e2b_xxx'; // Replace with your API Key
 const API_URL = 'https://api.ap-southeast-1.e2b.fc.aliyuncs.com';
 const DOMAIN = 'ap-southeast-1.e2b.fc.aliyuncs.com';
 const OPTS = { apiKey: API_KEY, apiUrl: API_URL, domain: DOMAIN };
@@ -305,13 +305,13 @@ async function waitUntilHealthy(sbx, host, token, timeout = 60) {
       console.log(`  /health ready (HTTP ${code})`);
       return;
     }
-    console.log(`  ...waiting for the browser service (HTTP ${JSON.stringify(code)})`);
+    console.log(`  ...waiting for browser service (HTTP ${JSON.stringify(code)})`);
     await sleep(2000);
   }
   throw new Error(`browser service not ready within ${timeout}s`);
 }
 
-/** Connect to browsertool over CDP, open the target page, and take a screenshot. */
+/** Connect to browsertool via CDP, open the target page, and take a screenshot. */
 async function verifyWithPlaywright(cdpWsUrl, headers) {
   const browser = await chromium.connectOverCDP(cdpWsUrl, { headers });
   const contexts = browser.contexts();
@@ -347,10 +347,10 @@ async function main() {
     console.log('\n--- Waiting for browser health check ---');
     await waitUntilHealthy(sbx, host, token);
 
-    console.log('\n--- Playwright CDP case ---');
+    console.log('\n--- Playwright CDP example ---');
     await verifyWithPlaywright(cdpWsUrl, headers);
 
-    console.log('\n--- Code Interpreter case ---');
+    console.log('\n--- Code Interpreter example ---');
     const execution = await sbx.runCode(
       "import json\nresult = {'status': 'ok', 'source': 'all-in-one'}\nprint(json.dumps(result, ensure_ascii=False))",
     );
@@ -369,7 +369,7 @@ main().catch((e) => {
 });
 ```
 
-## WebSocket endpoints
+## WebSocket Endpoints
 
 The browser service in the All-In-One template provides the following endpoints:
 
@@ -377,11 +377,11 @@ The browser service in the All-In-One template provides the following endpoints:
 | --- | --- | --- |
 | Health check endpoint | `https://<sandbox-host>/health` | Determine whether the browser service has finished starting |
 | CDP automation endpoint | `wss://<sandbox-host>/ws/automation` | Browser automation, compatible with Puppeteer and Playwright |
-| VNC livestream endpoint | `wss://<sandbox-host>/ws/livestream` | View the browser desktop in real time through a noVNC client |
+| VNC livestream endpoint | `wss://<sandbox-host>/ws/livestream` | View the browser desktop environment in real time via a noVNC client |
 
-> **Note**: `<sandbox-host>` is obtained through `sbx.get_host(3000)` or `sbx.getHost(3000)`. All endpoints require the `X-Access-Token` header for authentication.
+> **Note**: `<sandbox-host>` is obtained via `sbx.get_host(3000)` or `sbx.getHost(3000)`. All endpoints require the `X-Access-Token` header for authentication.
 
-Inside the sandbox you can first probe whether the CDP WebSocket handshake works. A `101 Switching Protocols` response means the CDP endpoint can be upgraded to a WebSocket connection:
+Inside the sandbox, you can first probe whether the CDP WebSocket handshake works properly. A `101 Switching Protocols` response indicates that the CDP endpoint can be upgraded to a WebSocket connection:
 
 ```bash
 curl -sS -m 4 -i \
@@ -392,46 +392,44 @@ curl -sS -m 4 -i \
   http://localhost:3000/ws/automation
 ```
 
-## Real-time VNC viewing
+## Real-Time VNC Viewing
 
-The All-In-One template supports viewing the remote browser desktop in real time through VNC, which makes it easy to monitor automation tasks during development and debugging.
+The All-In-One template supports real-time viewing of the remote browser desktop environment via VNC, making it convenient to monitor automation task execution during development and debugging.
 
-### Use the online noVNC client
+### Using the Online noVNC Client
 
-1. Open the online client provided by noVNC: [https://novnc.com/noVNC/vnc.html](https://novnc.com/noVNC/vnc.html)
-2. In the connection settings, under **Advanced** > **WebSocket**, fill in the following:
-   - **Host**: the host address obtained through `sbx.get_host(3000)` or `sbx.getHost(3000)`
+1. Visit the online client provided by noVNC: [https://novnc.com/noVNC/vnc.html](https://novnc.com/noVNC/vnc.html)
+2. In the connection settings, under **Advanced** > **WebSocket**, fill in the following connection information:
+   - **Host**: The host address obtained via `sbx.get_host(3000)` or `sbx.getHost(3000)`
    - **Port**: `443`
    - **Path**: `ws/livestream`
-3. Click **Connect** to see the browser interface.
+3. Click **Connect** to view the browser interface.
 
-> **Note**: The noVNC connection also requires authentication through `X-Access-Token`. After connecting, the initial screen may be black or gray. This is normal because the browser is waiting for instructions. Once your automation script runs `page.goto()` or similar operations, the interface will display the corresponding content.
+> **Note**: The noVNC connection also requires authentication via `X-Access-Token`. After connecting, the initial screen may be blank or gray; once the automation script performs operations such as `page.goto()`, the interface will display the corresponding content.
 
-## Combined workflow recommendations
+## Combined Workflow Recommendations
 
-| **Phase** | **Recommendation** |
+| **Phase** | **Recommended Approach** |
 | --- | --- |
-| Page access | Use Playwright/Puppeteer to connect to the browser through `wss://<sandbox-host>/ws/automation` |
+| Page access | Use Playwright/Puppeteer to connect to the browser via `wss://<sandbox-host>/ws/automation` |
 | Data persistence | Write screenshots, HTML, downloaded files, or intermediate results to the sandbox file system |
-| Code processing | Use the Code Interpreter SDK's `run_code` / `runCode` in the same sandbox to parse and analyze data |
-| Result export | Use the file APIs or SDK to download generated CSV, JSON, image, or PDF files |
+| Code processing | Use the Code Interpreter SDK's `run_code` / `runCode` to parse and analyze data within the same sandbox |
+| Result export | Use the file APIs or SDK to download generated CSV, JSON, image, PDF, and other result files |
 
 ## Limitations
 
-| **Item** | **Constraint** |
+| **Limitation** | **Constraint** |
 | --- | --- |
-| Sandbox lifetime | A single sandbox session lasts at most 6 hours by default, after which it is automatically destroyed |
-| Idle timeout | Configurable through the `sandboxIdleTimeoutSeconds` parameter; the sandbox terminates early after being idle for the specified time |
-| Browser support | Currently ships with Chromium/Chrome |
-| Resource spec | 4 vCPU / 8192 MB or higher is recommended to avoid resource contention between browser automation and code execution |
-| Authentication | CDP, VNC, and data-plane APIs all require a valid API key or `X-Access-Token` |
+| Browser support | Currently ships with built-in Chromium/Chrome browser |
+| Resource spec | 4 vCPU / 8192 MB or higher is recommended to avoid resource contention between browser and code execution |
+| Authentication requirement | CDP, VNC, and data-plane APIs all require a valid API Key or `X-Access-Token` |
 
-## Related documents
+## Related Documents
 
-- [Built-in Templates](../02.Built-in%20Templates.md)
-- [Build Custom Image Templates](../03.Build%20Custom%20Image%20Templates.md)
-- [Create a Sandbox](../../01.Sandbox/02.Create%20a%20Sandbox.md)
+- [Built-in Templates](../02.Built-in Templates.md)
+- [Build Custom Image Templates](../03.Build Custom Image Templates.md)
+- [Create a Sandbox](../../01.Sandbox/02.Create a Sandbox.md)
 - [Lifecycle](../../01.Sandbox/01.Lifecycle.md)
-- [Base Template](Base%20Template.md) (choose when you only need the envd base capabilities)
-- [Code Interpreter v1 Template](Code%20Interpreter%20v1%20Template.md) (choose when you only need code execution)
-- [Browser Template](Browser%20Template.md) (choose when you only need browser automation)
+- [Base Template](Base Template.md) (choose when you only need envd base capabilities)
+- [Code Interpreter v1 Template](Code Interpreter v1 Template.md) (choose when you only need code execution capabilities)
+- [Browser Template](Browser Template.md) (choose when you only need browser automation capabilities)

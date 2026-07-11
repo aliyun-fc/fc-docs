@@ -580,5 +580,9 @@ if __name__ == "__main__":
 
 ## Related documents
 
-- [Built-in Templates](../02.Built-in%20Templates.md)
-- [Build Custom Image Templates](../03.Build%20Custom%20Image%20Templates.md)
+- [Sandbox Template Overview](../02.Built-in Templates.md)
+- [Create a Sandbox](../../01.Sandbox/02.Create a Sandbox.md)
+- [Lifecycle](../../01.Sandbox/01.Lifecycle.md)
+- [Base Template](Base Template.md) (choose when only basic envd capabilities are needed)
+- [Code Interpreter v1 Template](Code Interpreter v1 Template.md) (choose when only code execution capabilities are needed)
+- [All-in-One Template](All-in-One Template.md) (choose when both browser and code execution capabilities are needed)
