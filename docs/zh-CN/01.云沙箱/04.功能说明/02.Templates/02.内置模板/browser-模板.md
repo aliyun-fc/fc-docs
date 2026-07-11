@@ -574,10 +574,7 @@ if __name__ == "__main__":
 
 | **限制项** | **约束** |
 | --- | --- |
-| 会话生命周期 | 单个沙箱会话的默认最长生命周期为 6 小时，到期后自动销毁 |
-| 浅休眠超时 | 可通过 `sandboxIdleTimeoutSeconds` 参数设置，超时无操作后提前终止 |
 | 浏览器支持 | 目前内置 Chromium/Chrome 浏览器 |
-| 代码解释器 | browser 模板包含 E2B envd 兼容基础能力，但不提供 Code Interpreter 服务，不能通过 Code Interpreter 上下文直接执行 Python |
 
 ## 相关文档
 

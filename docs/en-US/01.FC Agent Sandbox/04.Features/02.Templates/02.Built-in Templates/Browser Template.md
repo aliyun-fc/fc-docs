@@ -576,10 +576,7 @@ if __name__ == "__main__":
 
 | **Item** | **Constraint** |
 | --- | --- |
-| Session lifetime | A single sandbox session lasts at most 6 hours by default, after which it is automatically destroyed |
-| Idle timeout | Configurable through the `sandboxIdleTimeoutSeconds` parameter; the sandbox terminates early after being idle for the specified time |
 | Browser support | Currently ships with Chromium/Chrome |
-| Code interpreter | The browser template includes E2B envd-compatible base capabilities but does not provide the Code Interpreter service; you cannot execute Python directly through a Code Interpreter context |
 
 ## Related documents
 
