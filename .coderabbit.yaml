@@ -1,0 +1,123 @@
+# CodeRabbit 配置 —— 阿里云函数计算官方文档仓库 (fc-docs)
+# 本仓库为 MkDocs Material 中英双语产品文档，正文以 Markdown 为主，
+# 覆盖：云沙箱、云函数、智能体 AgentRun、模型服务 FunModel、图像生成 FunArt。
+# Schema: https://storage.googleapis.com/coderabbit_public_assets/schema.v2.json
+# yaml-language-server: $schema=https://storage.googleapis.com/coderabbit_public_assets/schema.v2.json
+
+# 审查评论使用简体中文输出（维护者与正文均为中文）
+language: "zh-CN"
+
+# 审查者人设与语气：面向技术文档，聚焦准确性、清晰度与术语一致性
+tone_instructions: >-
+  你是一位资深的中文技术文档编辑，负责审查阿里云函数计算系列产品的用户文档。
+  重点关注：内容准确性、表达清晰度、术语与产品名称一致性、Markdown 规范、
+  链接与图片有效性。语气专业、克制、具建设性，只提出可执行的具体修改建议，
+  不对纯风格偏好过度挑剔。
+
+reviews:
+  # 文档仓库以 chill 降低噪音，只报有价值的问题
+  profile: "chill"
+  # 不强制“请求变更”阻塞合并，由维护者在 PTL Review 决定
+  request_changes_workflow: false
+
+  high_level_summary: true
+  high_level_summary_instructions: >-
+    用中文总结本次 PR 改动的文档范围（涉及哪个产品、哪些章节），
+    并指出是否新增/删除页面、是否改动了图片资源。
+  review_status: true
+  changed_files_summary: true
+  # 纯文档无需时序图与打油诗
+  sequence_diagrams: false
+  poem: false
+  related_issues: true
+  related_prs: true
+
+  # 需要审查的范围：只审源文档，排除生成产物与自动生成内容
+  path_filters:
+    - "!_site/**"
+    - "!_mkdocs_src/**"
+    - "!mkdocs.generated.yml"
+    - "!**/*.min.*"
+    # 平台自动生成、不手工维护的开发参考（API Reference）
+    - "!docs/**/开发参考/**"
+    # 图片/媒体等二进制资源本身无需逐行审查
+    - "!assets/**"
+    - "!**/*.png"
+    - "!**/*.jpg"
+    - "!**/*.jpeg"
+    - "!**/*.gif"
+    - "!**/*.svg"
+    - "!**/*.webp"
+
+  # 分路径的定制审查规则
+  path_instructions:
+    - path: "docs/zh-CN/**/*.md"
+      instructions: >-
+        审查中文产品文档，重点：
+        1) 产品与专有名词统一：函数计算(FC)、云沙箱、智能体 AgentRun、
+           模型服务 FunModel、图像生成 FunArt、Serverless、RAM、OSS 等，
+           同一文档内大小写与译名保持一致；
+        2) 中文表达清晰、无语病、无错别字，避免机翻腔与冗余；
+        3) 中英文之间、数字与单位之间的空格规范，标点使用中文全角；
+        4) 代码块、命令、参数名、控制台路径准确，示例可复现；
+        5) 章节标题层级合理，与目录结构（01.开始使用 … 09.服务支持）一致；
+        6) 文内相对链接、锚点、跨文档引用有效，不出现死链；
+        7) 引用的图片/媒体必须在同一 PR 中提交到 assets/zh-CN/，
+           且路径与文件名匹配（区分大小写）。
+    - path: "docs/en-US/**/*.md"
+      instructions: >-
+        Review English product documentation. Focus on:
+        1) Grammar, spelling, and clear, concise technical English;
+        2) Consistent product/proper nouns: Function Compute (FC),
+           Cloud Sandbox, AgentRun, FunModel, FunArt, Serverless, RAM, OSS;
+        3) Terminology and structure aligned with the matching zh-CN page;
+        4) Accurate code blocks, commands, parameters, and console paths;
+        5) Valid internal links, anchors, and image references committed
+           under assets/en-US/ within the same PR.
+    - path: "**/*.md"
+      instructions: >-
+        通用 Markdown 检查：标题层级不跳级、列表与代码围栏闭合正确、
+        表格格式规范、外部链接可访问；不要改动或建议改动平台自动生成的
+        “开发参考 / API Reference” 内容。
+    - path: "mkdocs*.yml"
+      instructions: >-
+        审查 MkDocs 配置：导航(nav)条目指向的文件真实存在、路径正确，
+        新增页面已挂载到对应产品目录；注意 mkdocs.generated.yml 为自动生成，
+        通常不应手工修改。
+    - path: "scripts/**/*.py"
+      instructions: >-
+        审查文档构建脚本（Python）：关注正确性、路径处理、异常处理与可读性，
+        遵循 PEP 8。
+
+  auto_review:
+    enabled: true
+    # 每次新 push 只增量审查改动部分
+    auto_incremental_review: true
+    # 草稿 PR 不自动审查，标题含以下关键字的跳过
+    drafts: false
+    ignore_title_keywords:
+      - "WIP"
+      - "wip"
+      - "[skip ci]"
+      - "chore: sync"
+    base_branches:
+      - "main"
+      - "master"
+
+  tools:
+    # 散文/语法检查（中英文）
+    languagetool:
+      enabled: true
+      level: "default"
+    # Markdown 规范检查
+    markdownlint:
+      enabled: true
+
+# 允许在 PR 评论中 @coderabbitai 追问、重审、生成说明
+chat:
+  auto_reply: true
+
+knowledge_base:
+  # 让机器人学习本仓库既有文档/PR，逐步理解术语与写作规范
+  learnings:
+    scope: "auto"
