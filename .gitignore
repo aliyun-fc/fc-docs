@@ -34,3 +34,4 @@ temp/
 docs/**/开发参考/*
 !docs/**/开发参考/.gitkeep
 review-test
+/.local/
