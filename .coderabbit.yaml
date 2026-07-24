@@ -38,8 +38,9 @@ reviews:
     - "!_mkdocs_src/**"
     - "!mkdocs.generated.yml"
     - "!**/*.min.*"
-    # 平台自动生成、不手工维护的开发参考（API Reference）
-    - "!docs/**/开发参考/**"
+    # 平台自动生成、不手工维护的 API Reference；保留人工维护的开发参考。
+    - "!docs/**/*开发参考/API Reference/**"
+    - "!docs/**/*Developer Reference/API Reference/**"
     # 图片/媒体等二进制资源本身无需逐行审查
     - "!assets/**"
     - "!**/*.png"
