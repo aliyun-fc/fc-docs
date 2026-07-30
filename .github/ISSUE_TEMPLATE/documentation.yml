@@ -1,0 +1,38 @@
+name: 文档问题
+description: 反馈错误内容、失效链接、过期截图或缺失主题
+title: "[Docs] "
+labels:
+  - documentation
+body:
+  - type: input
+    id: location
+    attributes:
+      label: 文档位置
+      description: 请填写线上 URL 或仓库文件路径。
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: 问题描述
+      description: 请说明当前内容及其问题。
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望修改
+      description: 请提供建议内容、参考来源或复现步骤。
+  - type: dropdown
+    id: product
+    attributes:
+      label: 产品
+      options:
+        - 云沙箱
+        - 云函数
+        - 智能体 AgentRun
+        - 模型服务 FunModel
+        - 图像生成 FunArt
+        - 其他
+    validations:
+      required: true

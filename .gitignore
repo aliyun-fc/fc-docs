@@ -3,6 +3,7 @@
 ._*
 .idea/
 .vscode/
+.qoder/
 *.swp
 *.swo
 
@@ -30,8 +31,10 @@ temp/
 *.log
 
 # Platform-generated API reference docs.
-# Keep the directories via .gitkeep, but do not track generated content.
-docs/**/开发参考/*
-!docs/**/开发参考/.gitkeep
+# Keep manually maintained guides in numbered or legacy developer-reference directories.
+docs/**/*开发参考/API Reference/**
+!docs/**/*开发参考/API Reference/.gitkeep
+docs/**/*Developer Reference/API Reference/**
+!docs/**/*Developer Reference/API Reference/.gitkeep
 review-test
 /.local/

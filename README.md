@@ -32,6 +32,23 @@
 
 云沙箱开发参考包含 E2B SDK 兼容 API、接入参数和错误排查说明。平台自动生成的 API Reference 页面不在本仓库手工维护。
 
+## 本地预览
+
+本地构建需要 Python 3.12 和 Make：
+
+```bash
+make install
+make serve
+```
+
+提交变更前运行完整检查：
+
+```bash
+make check
+```
+
+详细要求请参见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
 ## 参与贡献
 
 文档贡献不只包括直接修改文字，也包括反馈问题、补充缺失主题、指出失效链接、过期截图、错误示例或目录结构问题。

@@ -10,8 +10,8 @@ This repository is used to organize and collaboratively maintain Function Comput
 
 Chinese documentation is located in `docs/zh-CN/` and organized by product area:
 
-- 01.Function
-- 02.FC Agent Sandbox
+- 01.FC Agent Sandbox
+- 02.Function
 - 03.AgentRun
 - 04.FunModel
 - 05.FunArt
@@ -31,6 +31,23 @@ Each product area follows a consistent structure where applicable:
 - 09.Support
 
 Cloud Sandbox developer reference includes E2B SDK compatibility APIs, connection parameters, and troubleshooting guidance. Platform-generated API Reference pages are not maintained manually in this repository.
+
+## Local Preview
+
+Local builds require Python 3.12 and Make:
+
+```bash
+make install
+make serve
+```
+
+Run the complete check before submitting changes:
+
+```bash
+make check
+```
+
+See [CONTRIBUTING.en-US.md](CONTRIBUTING.en-US.md) for details.
 
 ## Contributing
 
