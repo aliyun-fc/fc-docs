@@ -1,29 +1,28 @@
-# Announcement: Launch of the New Billing Model for FC Agent Sandbox
+# Announcement: Launch of New Billing Model for FC Agent Sandbox
+Thank you for your continued support of FC Agent Sandbox. To provide a runtime environment that better aligns with the needs of Agent development in the AI era, Function Compute (FC) will gradually roll out a new billing model across different regions starting from July 31, 2026, at 00:00 (UTC+8). 
 
-Thank you for using FC Agent Sandbox. To better support AI agent development, Function Compute will gradually roll out a new billing model across regions starting at 00:00 on July 31, 2026 (UTC+8). The new model provides compute editions for different workloads and lowers resource prices to help control operating costs.
+By establishing a scenario-based computing power matrix and significantly lowering our pricing, we are committed to delivering highly competitive, industry-leading cost-performance advantages. This update will empower your AI business to achieve lean cost control and drive efficiency.
+
 
 ## I. Key Changes
+[New Pricing for FC Agent Sandbox](../03.Pricing/02.Pay-as-you-go.md)
 
-For details, see [Pay-as-you-go](../03.Pricing/02.Pay-as-you-go.md).
+### 1. Three Scenario-Based Computing Specs: Match on Demand, Pay with Precision
+To meet the diverse demands of different business scenarios, such as "compute-intensive" or "latency-sensitive" workloads, FC Agent Sandbox introduces three major editions—Eco, Std, and Pro. With differentiated computing power pricing, we enable true "on-demand matching and precise payment."
 
-### 1. Three Compute Editions
+| Edition | Typical Scenarios | Computing Features | 	Hibernation Capabilities | 
+| --- | --- | --- | --- | 
+| Eco(Economy) | Ideal for AI startups, personal debugging, and Tool Use validation. | Ultra-low barrier: Allows occasional performance fluctuations; the top choice for cost-efficiency. | No Hibernation | 
+| Std(Standard·Recommended) | Ideal for enterprise Copilots, code execution, and offline sampling. | General & Balanced: Relatively stable performance with low-latency response; enterprise-grade production-ready. |Hibernation |
+| Pro(Professional·Recommended) | Ideal for high-concurrency consumer-facing Agents, complex computation, and large-scale online RL simulation. | Elastic & High-Throughput: Supports millions of concurrent requests with ultra-low latency; perfectly powers code execution and distributed high-throughput RL sampling. | Deep & Shallow Hibernation | 
 
-FC Agent Sandbox introduces Eco, Std, and Pro editions for workloads with different compute and latency requirements.
+*Note: For detailed feature matrix differences among the editions, please refer to the upcoming official documentation, which will be released alongside the launch of the new FC Agent Sandbox billing model.*
 
-| Edition | Typical Scenarios | Compute Characteristics | Hibernation Capabilities |
-| --- | --- | --- | --- |
-| Eco (Economy) | AI startups, personal debugging, and tool-use validation | Allows occasional compute fluctuations and suits cost-sensitive workloads | None |
-| Std (Standard) | Enterprise copilots, code execution, and offline sampling | Balanced compute with relatively stable performance and low-latency responses | Deep hibernation |
-| Pro (Professional) | High-concurrency consumer agents, complex computation, and large-scale online RL simulation | High-throughput compute for large-scale concurrency, code execution, and distributed RL sampling | Deep and light hibernation |
+### 2. Simplified Billing &  Massive Cost Savings 
+FC Agent Sandbox has transitioned to an intuitive pay-as-you-go model based on the formula: **[Unit Price of Computing Resource × Computing Run Duration]**, making your bills clear and easy to understand. Concurrently, we have slashed unit prices to pass on cost savings directly to you—significantly reducing your scale-up operational costs and ensuring that AI innovation is no longer constrained by budget.
 
-The detailed feature matrix will be published with the new billing model.
 
-### 2. Simplified Billing and Lower Prices
-
-FC Agent Sandbox uses a pay-as-you-go formula of compute resource unit price × compute runtime. Resource prices are also reduced to lower the cost of running workloads at scale.
-
-## II. Applicability and Transition
-
-- Applicability: The new pricing applies only to users who access FC Agent Sandbox through the E2B SDK.
-- Migration: Existing Sandbox Function and AgentRun Sandbox users must switch to E2B SDK access to use the new pricing.
-- Automatic upgrade: Existing FC Agent Sandbox users who access the service through the E2B SDK will be moved to the Pro edition when the new pricing takes effect because their current service includes light hibernation. To switch to another edition, contact the DingTalk group 179855020297.
+## II. Applicability & Transition Notice
+*   **Applicable To**: The revised pricing structure is exclusively valid for FC Agent Sandbox clients utilizing the **E2B SDK** integration.
+*   **Migration Path**: Customers currently on "Sandbox Functions" or "AgentRun Sandbox" who wish to benefit from the new pricing are required to transition to the **E2B SDK** interface.
+*   **Active Account Upgrade**: Existing E2B SDK instances will be **automatically transitioned to the Pro tier** upon the effective date of the new pricing, enabling immediate access to "Shallow Hibernation" capabilities. For configuration adjustments to Eco or Std tiers, please contact us via DingTalk Group (**179855020297**).
