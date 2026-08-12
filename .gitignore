@@ -6,6 +6,7 @@
 .qoder/
 *.swp
 *.swo
+.codegraph
 
 # Local environments and caches
 .env
