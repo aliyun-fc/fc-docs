@@ -1,5 +1,5 @@
 # Announcement on Commercial Billing for the Sandbox Function Snapshot Feature
-Effective from 00:00 (Beijing Time) on September 7, 2026, the Snapshot feature for Sandbox Functions will officially be subject to commercial billing.
+Effective from 00:00 Beijing Time (UTC+8) on September 7, 2026, the Snapshot feature for Sandbox Functions will officially be subject to commercial billing.
 
 ## Feature Overview
 The Snapshot feature supports full-state snapshots (including memory and disk) of running sandboxes. Based on these snapshots, you can restore a sandbox within seconds or clone multiple new sandboxes. This is suitable for scenarios such as resuming long-running agent tasks from breakpoints, achieving second-level cold starts through environment pre-warming, and parallel cloning for exploration.
