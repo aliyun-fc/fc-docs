@@ -1,0 +1,17 @@
+# Announcement on Commercial Billing for the Cloud Sandbox Snapshot Feature
+Effective from 00:00 Beijing Time on September 7, 2026 (UTC+8), the Cloud Sandbox Snapshot feature will begin commercial billing.
+
+## Feature Overview
+The Snapshot feature supports full-state snapshots (including memory and disk) of running sandboxes. Based on these snapshots, you can restore a sandbox within seconds or clone multiple new sandboxes. This is suitable for scenarios such as resuming long-running agent tasks from breakpoints, achieving cold starts within seconds through environment pre-warming, and parallel cloning for exploration.
+
+## Pricing
+```text
+Snapshot Storage Usage = Memory Specification * 2 + Disk Specification
+Cost = Snapshot Storage Usage * Disk Unit Price * Duration
+Disk Unit Prices:
+  - Mainland China regions: USD 0.00031896 per GiB per hour
+  - Regions outside Mainland China: USD 0.00025308 per GiB per hour
+```
+
+## Impact on Existing Snapshots
+Snapshots created before the introduction of commercial billing will officially incur charges starting from 00:00 on September 7. Please delete or retain them as needed.
