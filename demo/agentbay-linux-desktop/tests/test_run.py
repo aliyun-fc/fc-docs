@@ -24,13 +24,25 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(config.template_id, "tmpl-existing")
         self.assertIsNone(config.image)
 
-    def test_build_requires_image_and_non_reserved_template_name(self):
+    def test_build_requires_image(self):
         with self.assertRaisesRegex(ValueError, "E2B_DESKTOP_IMAGE"):
             desktop_demo.DemoConfig.from_mapping(
                 {
                     "E2B_API_KEY": "redacted",
                     "E2B_API_URL": "https://api.example.test",
                     "E2B_DOMAIN": "example.test",
+                    "E2B_DESKTOP_TEMPLATE": "desktop-v0048",
+                }
+            )
+
+    def test_build_rejects_reserved_template_name(self):
+        with self.assertRaisesRegex(ValueError, "reserved desktop-v prefix"):
+            desktop_demo.DemoConfig.from_mapping(
+                {
+                    "E2B_API_KEY": "redacted",
+                    "E2B_API_URL": "https://api.example.test",
+                    "E2B_DOMAIN": "example.test",
+                    "E2B_DESKTOP_IMAGE": "desktop:latest",
                     "E2B_DESKTOP_TEMPLATE": "desktop-v0048",
                 }
             )
@@ -47,6 +59,10 @@ class StreamUrlTests(unittest.TestCase):
             desktop_demo.validate_stream_url("http://sbx.example.test/vnc.html")
         with self.assertRaisesRegex(ValueError, "/vnc.html"):
             desktop_demo.validate_stream_url("https://sbx.example.test/other")
+
+    def test_rejects_hostless_https_url(self):
+        with self.assertRaisesRegex(ValueError, "host"):
+            desktop_demo.validate_stream_url("https:/vnc.html")
 
 
 if __name__ == "__main__":

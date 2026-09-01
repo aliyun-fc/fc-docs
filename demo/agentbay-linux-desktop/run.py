@@ -59,5 +59,7 @@ def validate_stream_url(value: str) -> None:
     parsed = urlparse(value)
     if parsed.scheme != "https":
         raise ValueError("desktop stream URL must use https")
+    if not parsed.netloc or not parsed.hostname:
+        raise ValueError("desktop stream URL must include a host")
     if parsed.path != "/vnc.html":
         raise ValueError("desktop stream URL path must be /vnc.html")
