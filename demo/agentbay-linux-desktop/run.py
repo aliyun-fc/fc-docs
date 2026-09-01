@@ -2,9 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import os
+import re
 import sys
 from typing import Mapping
 from urllib.parse import urlparse, urlunparse
+
+
+URL_PATTERN = re.compile(r"https?://[^\s]+", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -68,12 +72,16 @@ def validate_stream_url(value: str) -> None:
 
 
 def stage_message(stage: str, status: str, detail: str = "") -> str:
-    """Format diagnostic output without exposing URL query parameters."""
-    parsed = urlparse(detail)
-    if parsed.scheme and parsed.netloc:
-        detail = urlunparse(parsed._replace(query="", fragment=""))
+    """Format diagnostic output without exposing URL credentials or queries."""
+    detail = URL_PATTERN.sub(_redact_url, detail)
     suffix = f" {detail}" if detail else ""
     return f"[{stage}] {status}{suffix}"
+
+
+def _redact_url(match: re.Match[str]) -> str:
+    parsed = urlparse(match.group())
+    sanitized_netloc = parsed.netloc.rsplit("@", maxsplit=1)[-1]
+    return urlunparse(parsed._replace(netloc=sanitized_netloc, query="", fragment=""))
 
 
 def report(stage: str, status: str, detail: str = "") -> None:
@@ -114,7 +122,7 @@ def main() -> None:
         template_id = config.template_id or build_template(config)
         stage = "sandbox_create"
         desktop = Sandbox.create(template=template_id, timeout=900)
-        report("sandbox_create", "ok")
+        report("sandbox_create", "ok", f"sandbox_id={desktop.sandbox_id}")
 
         stage = "runtime_command"
         result = desktop.commands.run("printf desktop-runtime-ok")
@@ -141,22 +149,25 @@ def main() -> None:
     finally:
         primary_error = sys.exc_info()[0] is not None
         if desktop is not None:
+            cleanup_detail = f"sandbox_id={desktop.sandbox_id}"
             if stream_started:
                 try:
                     desktop.stream.stop()
                 except Exception as error:
                     cleanup_errors.append(error)
+                    cleanup_detail += f"; stream_stop={error}"
             try:
                 desktop.kill()
             except Exception as error:
                 cleanup_errors.append(error)
+                cleanup_detail += f"; kill={error}"
 
         if cleanup_errors:
-            report("cleanup", "failed")
+            report("cleanup", "failed", cleanup_detail)
             if not primary_error:
                 raise cleanup_errors[0]
         elif desktop is not None:
-            report("cleanup", "ok")
+            report("cleanup", "ok", cleanup_detail)
 
 
 if __name__ == "__main__":
