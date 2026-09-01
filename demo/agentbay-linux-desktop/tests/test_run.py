@@ -1,7 +1,10 @@
 import importlib.util
+import os
 import pathlib
 import sys
+import types
 import unittest
+from unittest.mock import patch
 
 
 MODULE = pathlib.Path(__file__).parents[1] / "run.py"
@@ -63,6 +66,54 @@ class StreamUrlTests(unittest.TestCase):
     def test_rejects_hostless_https_url(self):
         with self.assertRaisesRegex(ValueError, "host"):
             desktop_demo.validate_stream_url("https:/vnc.html")
+
+
+class ReportingTests(unittest.TestCase):
+    def test_stage_output_redacts_url_query(self):
+        line = desktop_demo.stage_message(
+            "desktop_stream",
+            "ok",
+            "https://6080-sbx.example.test/vnc.html?password=secret",
+        )
+        self.assertIn("[desktop_stream] ok", line)
+        self.assertNotIn("password=secret", line)
+        self.assertIn("https://6080-sbx.example.test/vnc.html", line)
+
+    def test_main_reports_failed_runtime_command_and_preserves_error(self):
+        class Desktop:
+            def __init__(self):
+                self.commands = types.SimpleNamespace(run=self.run)
+                self.killed = False
+
+            def run(self, command):
+                raise RuntimeError("command channel failed")
+
+            def kill(self):
+                self.killed = True
+
+        desktop = Desktop()
+        desktop_sdk = types.ModuleType("e2b_desktop")
+        desktop_sdk.Sandbox = types.SimpleNamespace(create=lambda **kwargs: desktop)
+        dotenv = types.ModuleType("dotenv")
+        dotenv.load_dotenv = lambda: None
+        environment = {
+            "E2B_API_KEY": "redacted",
+            "E2B_API_URL": "https://api.example.test",
+            "E2B_DOMAIN": "example.test",
+            "E2B_DESKTOP_TEMPLATE_ID": "tmpl-existing",
+        }
+
+        with patch.dict(sys.modules, {"dotenv": dotenv, "e2b_desktop": desktop_sdk}):
+            with patch.dict(os.environ, environment, clear=True):
+                with patch("builtins.print") as print_mock:
+                    with self.assertRaisesRegex(RuntimeError, "command channel failed"):
+                        desktop_demo.main()
+
+        self.assertTrue(desktop.killed)
+        self.assertIn(
+            "[runtime_command] failed",
+            [call.args[0] for call in print_mock.call_args_list],
+        )
 
 
 if __name__ == "__main__":
