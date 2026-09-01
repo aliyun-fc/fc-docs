@@ -156,6 +156,8 @@ def write_config(nav: list[dict[str, str | list]]) -> None:
                 "  - toc:",
                 "      permalink: true",
                 "  - pymdownx.details",
+                "  - pymdownx.tabbed:",
+                "      alternate_style: true",
                 "  - pymdownx.superfences:",
                 "      custom_fences:",
                 "        - name: mermaid",
