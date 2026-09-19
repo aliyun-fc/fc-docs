@@ -8,7 +8,7 @@ By establishing a scenario-based computing power matrix and significantly loweri
 [New Pricing for FC Agent Sandbox](../03.Pricing/02.Pay-as-you-go.md)
 
 ### 1. Three Scenario-Based Computing Specs: Match on Demand, Pay with Precision
-To meet the diverse demands of different business scenarios, such as "compute-intensive" or "latency-sensitive" workloads, FC Agent Sandbox introduces three major editions—Eco, Std, and Pro. With differentiated computing power pricing, we enable true "on-demand matching and precise payment."
+To meet the differentiated needs of diverse business scenarios — such as "compute-intensive" and "latency-sensitive" workloads — Cloud Sandbox introduces three major tiers: **Eco**, **Std**, and **Pro**. Each tier offers differentiated compute QoS pricing, truly enabling "match-on-demand, pay-per-use" precision billing.
 
 | Edition | Typical Scenarios | Computing Features | 	Hibernation Capabilities | 
 | --- | --- | --- | --- | 
