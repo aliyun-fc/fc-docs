@@ -14,7 +14,7 @@ To meet the differentiated needs of diverse business scenarios — such as "comp
 | :--- | :--- | :--- | :--- |
 | **Eco (Economy)** | **Ultra-low barrier:** Allows compute fluctuation; best value for cost-sensitive tasks. | AI prototyping, personal debugging, Tool Use validation. | No Hibernation |
 | **Std (Standard)** | **Balanced performance:** Relatively stable, low-latency response; suitable for enterprise production. | High-concurrency C-end Agents, complex computation, large-scale sampling and RL simulation. | Hibernation |
-| **Pro (Professional)** | **Rigid resource delivery:** Dedicated resource pool ensures zero compute fluctuation; supports 1ms ultra-fast wake-up from shallow sleep. | Dedicated resources with zero jitter; production-grade RL training, financial quant trading, multi-agent long-chain orchestration. | Deep & Shallow Hibernation |
+| **Pro (Professional)** | **Rigid resource delivery:** Dedicated resource pool ensures zero compute fluctuation; supports 1ms ultra-fast wake-up from shallow sleep. | Dedicated resources with zero jitter; production-grade RL training, financial quant trading, multi-agent long-chain orchestration. | Deep & Light Hibernation |
 
 > *Note: Detailed functional differences across tiers will be documented in upcoming official releases, aligned with the launch of this new pricing model.*
 
