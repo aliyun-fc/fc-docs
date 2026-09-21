@@ -65,8 +65,8 @@ Windows 沙箱创建 Snapshot，再从 Snapshot 恢复新的 Windows 沙箱。
 ### 精简原则
 
 - 删除耗时里程碑、重复状态输出和调试日志。
-- 使用 `websocket-client` 处理 WebSocket 帧，替代手写握手和帧编解码；RFB 协议仍只实现
-  验证首帧所需的最小步骤。
+- 保留参考脚本中已经验证过的最小 WebSocket/RFB 首帧探测实现，不再引入额外依赖；该实现
+  只覆盖桌面就绪检查所需的握手和原始帧读取。
 - 保留清晰的阶段输出以及最终的 Template ID、Snapshot ID、恢复沙箱 ID 和 noVNC URL。
 
 ## 安全性
@@ -82,4 +82,3 @@ Windows 沙箱创建 Snapshot，再从 Snapshot 恢复新的 Windows 沙箱。
 - 检查 `.env` 中使用的变量与脚本读取项一致。
 - 运行仓库单元测试、文档结构检查和 MkDocs 严格构建：`make check`。
 - 人工审查相对链接、标题层级、占位凭证和清理路径。
-
